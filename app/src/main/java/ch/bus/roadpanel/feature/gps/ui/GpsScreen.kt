@@ -17,6 +17,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,10 +27,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.bus.roadpanel.core.network.NetworkModule
+import ch.bus.roadpanel.R
 import ch.bus.roadpanel.feature.gps.domain.GpsRepository
 import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -38,8 +44,17 @@ import org.osmdroid.views.overlay.Marker
 fun GpsScreen(modifier: Modifier = Modifier) {
     val viewModel: GpsViewModel = viewModel(factory = GpsViewModel.factory(GpsRepository(NetworkModule.gpsApi)))
     val state by viewModel.uiState.collectAsState()
+    var orthophotoEnabled by remember { mutableStateOf(false) }
     val context = LocalContext.current
     Configuration.getInstance().userAgentValue = context.packageName
+    val orthophotoTileSource = XYTileSource(
+        "EsriWorldImagery",
+        0,
+        19,
+        256,
+        ".jpg",
+        arrayOf("https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/")
+    )
 
     Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         AndroidView(
@@ -52,11 +67,18 @@ fun GpsScreen(modifier: Modifier = Modifier) {
                 }
             },
             update = { map ->
+                map.setTileSource(if (orthophotoEnabled) orthophotoTileSource else TileSourceFactory.MAPNIK)
                 state.data?.let {
                     val point = GeoPoint(it.mapLatitude, it.mapLongitude)
                     map.controller.animateTo(point)
                     map.overlays.removeAll { overlay -> overlay is Marker }
-                    map.overlays.add(Marker(map).apply { position = point; setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM) })
+                    map.overlays.add(
+                        Marker(map).apply {
+                            position = point
+                            icon = ContextCompat.getDrawable(context, R.drawable.ic_van_marker)
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        }
+                    )
                     map.invalidate()
                 }
             }
@@ -73,6 +95,9 @@ fun GpsScreen(modifier: Modifier = Modifier) {
                 Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Text("GPS", style = MaterialTheme.typography.titleMedium)
                     Button(onClick = viewModel::refresh) { Text("Refresh") }
+                }
+                Button(onClick = { orthophotoEnabled = !orthophotoEnabled }) {
+                    Text(if (orthophotoEnabled) "Plan standard" else "Fond orthophoto")
                 }
                 if (state.isLoading) Text("Connexion: loading...")
                 state.error?.let { Text("Erreur: $it", color = Color.Red) }
