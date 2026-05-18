@@ -31,7 +31,7 @@ class GpsViewModel(private val repository: GpsRepository) : ViewModel() {
         viewModelScope.launch {
             while (true) {
                 refresh()
-                delay(5_000)
+                delay(60_000)
             }
         }
     }
