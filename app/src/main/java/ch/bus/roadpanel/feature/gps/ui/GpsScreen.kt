@@ -77,13 +77,7 @@ fun GpsScreen(modifier: Modifier = Modifier) {
                 if (state.isLoading) Text("Connexion: loading...")
                 state.error?.let { Text("Erreur: $it", color = Color.Red) }
                 state.data?.let {
-                    Text("Lat: ${it.mapLatitude}")
-                    Text("Lon: ${it.mapLongitude}")
-                    Text("Altitude: ${it.altitude} m")
-                    Text("Vitesse: ${it.speed} m/s")
-                    Text("Track: ${it.track}°")
                     Text("Heure GPS: ${it.time}")
-                    Text("Connexion: OK")
                 }
             }
         }
