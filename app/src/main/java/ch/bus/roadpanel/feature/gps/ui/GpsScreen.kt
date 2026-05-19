@@ -27,17 +27,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.bus.roadpanel.core.network.NetworkModule
-import ch.bus.roadpanel.R
 import ch.bus.roadpanel.feature.gps.domain.GpsRepository
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
+import android.graphics.Paint
+import org.osmdroid.views.overlay.Overlay
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -71,12 +70,21 @@ fun GpsScreen(modifier: Modifier = Modifier) {
                 state.data?.let {
                     val point = GeoPoint(it.mapLatitude, it.mapLongitude)
                     map.controller.animateTo(point)
-                    map.overlays.removeAll { overlay -> overlay is Marker }
+                    map.overlays.removeAll { overlay -> overlay is Overlay }
                     map.overlays.add(
-                        Marker(map).apply {
-                            position = point
-                            icon = ContextCompat.getDrawable(context, R.drawable.ic_van_marker)
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        object : Overlay() {
+                            private val paint = Paint().apply {
+                                color = android.graphics.Color.RED
+                                style = Paint.Style.FILL
+                                isAntiAlias = true
+                            }
+
+                            override fun draw(canvas: android.graphics.Canvas, mapView: MapView, shadow: Boolean) {
+                                if (shadow) return
+                                val screenPoint = android.graphics.Point()
+                                mapView.projection.toPixels(point, screenPoint)
+                                canvas.drawCircle(screenPoint.x.toFloat(), screenPoint.y.toFloat(), 10f, paint)
+                            }
                         }
                     )
                     map.invalidate()
