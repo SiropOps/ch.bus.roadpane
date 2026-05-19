@@ -8,12 +8,12 @@ plugins {
 
 android {
     namespace = "ch.bus.roadpanel"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "ch.bus.roadpanel"
         minSdk = 30
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -57,7 +57,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
-    implementation("com.google.android.material:material:1.12.0")
+    implementation(libs.google.material)
 
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
