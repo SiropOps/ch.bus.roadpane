@@ -96,9 +96,7 @@ fun GpsScreen(modifier: Modifier = Modifier) {
                     Text("GPS", style = MaterialTheme.typography.titleMedium)
                     Button(onClick = viewModel::refresh) { Text("Refresh") }
                 }
-                Button(onClick = { orthophotoEnabled = !orthophotoEnabled }) {
-                    Text(if (orthophotoEnabled) "Plan standard" else "Fond orthophoto")
-                }
+
                 if (state.isLoading) Text("Connexion: loading...")
                 state.error?.let { Text("Erreur: $it", color = Color.Red) }
                 state.data?.let {
