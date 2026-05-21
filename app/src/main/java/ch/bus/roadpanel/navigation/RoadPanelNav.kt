@@ -50,11 +50,11 @@ sealed class TopLevelDestination(
     val label: String,
     val icon: RoadPanelIconKind,
 ) {
-    data object Home : TopLevelDestination("home", "Home", RoadPanelIconKind.Dashboard)
-    data object Gps : TopLevelDestination("gps", "Map", RoadPanelIconKind.Map)
-    data object Power : TopLevelDestination("power", "Energy", RoadPanelIconKind.Power)
-    data object Sensors : TopLevelDestination("sensors", "Sensors", RoadPanelIconKind.Sensors)
-    data object Settings : TopLevelDestination("settings", "Setup", RoadPanelIconKind.Settings)
+    data object Home : TopLevelDestination("home", "Accueil", RoadPanelIconKind.Dashboard)
+    data object Gps : TopLevelDestination("gps", "Carte", RoadPanelIconKind.Map)
+    data object Power : TopLevelDestination("power", "Énergie", RoadPanelIconKind.Power)
+    data object Sensors : TopLevelDestination("sensors", "Capteurs", RoadPanelIconKind.Sensors)
+    data object Settings : TopLevelDestination("settings", "Réglages", RoadPanelIconKind.Settings)
 }
 
 @Composable
@@ -82,9 +82,9 @@ fun RoadPanelApp() {
         ) {
             composable(TopLevelDestination.Home.route) { DashboardScreen() }
             composable(TopLevelDestination.Gps.route) { GpsScreen() }
-            composable(TopLevelDestination.Power.route) { PlaceholderScreen("Energy systems") }
-            composable(TopLevelDestination.Sensors.route) { PlaceholderScreen("Sensor bay") }
-            composable(TopLevelDestination.Settings.route) { PlaceholderScreen("Setup") }
+            composable(TopLevelDestination.Power.route) { PlaceholderScreen("Systèmes énergétiques") }
+            composable(TopLevelDestination.Sensors.route) { PlaceholderScreen("Baie de capteurs") }
+            composable(TopLevelDestination.Settings.route) { PlaceholderScreen("Réglages") }
         }
 
         RoadPanelBottomBar(
@@ -211,7 +211,7 @@ private fun PlaceholderScreen(label: String) {
                     style = MaterialTheme.typography.titleLarge,
                 )
                 Text(
-                    text = "Reserved for future vehicle telemetry.",
+                    text = "Réservé à la télémétrie du véhicule à venir.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = RoadPanelMuted,
                 )

@@ -86,23 +86,23 @@ private fun DashboardContent(
                 item { DashboardHeader(state = state) }
                 item { RouteSummaryCard(state = state) }
                 item {
-                    DashboardSection(title = "Vehicle Telemetry") {
+                    DashboardSection(title = "Télémétrie du véhicule") {
                         TelemetryGrid(
                             items = listOf(
-                                DashboardMetric("Battery", "87", "%", "Aux bank estimated", RoadPanelIconKind.Battery, RoadPanelAccent),
+                                DashboardMetric("Batterie", "87", "%", "Batterie auxiliaire estimée", RoadPanelIconKind.Battery, RoadPanelAccent),
                                 DashboardMetric("GPS", gpsStatusLabel(state), null, gpsDetailLabel(state), RoadPanelIconKind.Gps, RoadPanelSky),
-                                DashboardMetric("Speed", state.data?.speed?.format(1) ?: "--", "km/h", "Live navigation feed", RoadPanelIconKind.Speed, RoadPanelAccent),
-                                DashboardMetric("Altitude", state.data?.altitude?.format(0) ?: "--", "m", "Barometric feed pending", RoadPanelIconKind.Altitude, RoadPanelSky),
+                                DashboardMetric("Vitesse", state.data?.speed?.format(1) ?: "--", "km/h", "Flux de navigation en direct", RoadPanelIconKind.Speed, RoadPanelAccent),
+                                DashboardMetric("Altitude", state.data?.altitude?.format(0) ?: "--", "m", "Flux barométrique en attente", RoadPanelIconKind.Altitude, RoadPanelSky),
                             ),
                         )
                     }
                 }
                 item {
-                    DashboardSection(title = "Energy & Systems") {
+                    DashboardSection(title = "Énergie et systèmes") {
                         TelemetryGrid(
                             items = listOf(
-                                DashboardMetric("Solar", "124", "W", "Placeholder until solar API lands", RoadPanelIconKind.Solar, RoadPanelSolar),
-                                DashboardMetric("Connection", connectionValue(state), null, connectionDetail(state), RoadPanelIconKind.Connection, connectionColor(state)),
+                                DashboardMetric("Solaire", "124", "W", "Temporaire jusqu'à l'arrivée de l'API solaire", RoadPanelIconKind.Solar, RoadPanelSolar),
+                                DashboardMetric("Connexion", connectionValue(state), null, connectionDetail(state), RoadPanelIconKind.Connection, connectionColor(state)),
                             ),
                         )
                     }
@@ -125,7 +125,7 @@ private fun DashboardHeader(state: GpsUiState) {
             fontWeight = FontWeight.Bold,
         )
         Text(
-            text = "Van telemetry, navigation, and off-grid systems at a glance.",
+            text = "Télémétrie du van, navigation et systèmes hors réseau en un coup d'œil.",
             style = MaterialTheme.typography.bodyLarge,
             color = RoadPanelMuted,
         )
@@ -145,12 +145,12 @@ private fun RouteSummaryCard(state: GpsUiState) {
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Current Position",
+                        text = "Position actuelle",
                         style = MaterialTheme.typography.labelLarge,
                         color = RoadPanelMuted,
                     )
                     Text(
-                        text = state.data?.time ?: "Waiting for GPS",
+                        text = state.data?.time ?: "En attente du GPS",
                         style = MaterialTheme.typography.titleLarge,
                     )
                 }
@@ -163,7 +163,7 @@ private fun RouteSummaryCard(state: GpsUiState) {
             Text(
                 text = state.data?.let {
                     "${it.mapLatitude.format(5)}, ${it.mapLongitude.format(5)}"
-                } ?: "Map coordinates will appear once the GPS feed responds.",
+                } ?: "Les coordonnées s'afficheront dès que le flux GPS répondra.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = RoadPanelMuted,
             )
@@ -205,29 +205,29 @@ private data class DashboardMetric(
 )
 
 private fun gpsStatusLabel(state: GpsUiState): String = when {
-    state.data != null -> "Locked"
-    state.isLoading -> "Searching"
-    state.error != null -> "Offline"
-    else -> "Standby"
+    state.data != null -> "Verrouillé"
+    state.isLoading -> "Recherche"
+    state.error != null -> "Hors ligne"
+    else -> "Veille"
 }
 
 private fun gpsDetailLabel(state: GpsUiState): String = when {
-    state.data != null -> "Fix updated at ${state.data.time}"
-    state.isLoading -> "Polling vehicle feed"
+    state.data != null -> "Position mise à jour à ${state.data.time}"
+    state.isLoading -> "Interrogation du flux véhicule"
     state.error != null -> state.error
-    else -> "Ready"
+    else -> "Prêt"
 }
 
 private fun connectionValue(state: GpsUiState): String = when {
-    state.error != null -> "Offline"
-    state.isLoading -> "Syncing"
-    else -> "Online"
+    state.error != null -> "Hors ligne"
+    state.isLoading -> "Synchronisation"
+    else -> "En ligne"
 }
 
 private fun connectionDetail(state: GpsUiState): String = when {
-    state.error != null -> "Vehicle endpoint unavailable"
-    state.isLoading -> "Refreshing telemetry"
-    else -> "API link healthy"
+    state.error != null -> "Point d'accès véhicule indisponible"
+    state.isLoading -> "Actualisation de la télémétrie"
+    else -> "Lien API opérationnel"
 }
 
 private fun connectionColor(state: GpsUiState) = if (state.error == null) RoadPanelAccent else RoadPanelError
