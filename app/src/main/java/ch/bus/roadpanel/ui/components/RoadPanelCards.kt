@@ -195,7 +195,7 @@ private fun TelemetryCardPreview() {
             title = "Altitude",
             value = "1,248",
             unit = "m",
-            status = "Stable over last sample",
+            status = "Stable sur le dernier relevé",
             icon = RoadPanelIconKind.Altitude,
             accent = RoadPanelAccentSoft,
         )

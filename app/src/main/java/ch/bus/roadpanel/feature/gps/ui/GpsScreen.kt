@@ -104,7 +104,7 @@ fun GpsScreen(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(start = 18.dp, top = 24.dp),
-            text = if (orthophotoEnabled) "Satellite" else "Map",
+            text = if (orthophotoEnabled) "Satellite" else "Carte",
             color = RoadPanelAccent,
         )
 
@@ -188,11 +188,11 @@ private fun GpsTelemetrySheet(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        text = "Live GPS",
+                        text = "GPS en direct",
                         style = MaterialTheme.typography.titleLarge,
                     )
                     Text(
-                        text = state.data?.time ?: "Awaiting vehicle feed",
+                        text = state.data?.time ?: "En attente du flux véhicule",
                         style = MaterialTheme.typography.bodyMedium,
                         color = RoadPanelMuted,
                     )
@@ -218,7 +218,7 @@ private fun GpsTelemetrySheet(
             ) {
                 GpsStat(
                     modifier = Modifier.weight(1.2f),
-                    label = "Speed",
+                    label = "Vitesse",
                     value = state.data?.speed?.format(1) ?: "--",
                     unit = "km/h",
                 )
@@ -230,7 +230,7 @@ private fun GpsTelemetrySheet(
                 )
                 GpsStat(
                     modifier = Modifier.weight(1f),
-                    label = "Track",
+                    label = "Cap",
                     value = state.data?.track?.format(0) ?: "--",
                     unit = "deg",
                 )
@@ -253,7 +253,7 @@ private fun GpsTelemetrySheet(
                     Text(
                         text = state.data?.let {
                             "${it.mapLatitude.format(5)}, ${it.mapLongitude.format(5)}"
-                        } ?: "Refresh GPS coordinates",
+                        } ?: "Actualiser les coordonnées GPS",
                         style = MaterialTheme.typography.labelLarge,
                         color = RoadPanelSky,
                     )
@@ -298,10 +298,10 @@ private fun GpsStat(
 }
 
 private fun gpsStatus(state: GpsUiState): String = when {
-    state.error != null -> "Offline"
-    state.isLoading -> "Syncing"
-    state.data != null -> "Locked"
-    else -> "Standby"
+    state.error != null -> "Hors ligne"
+    state.isLoading -> "Synchronisation"
+    state.data != null -> "Verrouillé"
+    else -> "Veille"
 }
 
 private fun Double.format(decimals: Int): String = "%.${decimals}f".format(Locale.US, this)
