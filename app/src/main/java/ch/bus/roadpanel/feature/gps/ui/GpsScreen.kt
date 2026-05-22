@@ -49,6 +49,7 @@ import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Overlay
 import java.util.Locale
@@ -62,14 +63,20 @@ fun GpsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     Configuration.getInstance().userAgentValue = context.packageName
     val orthophotoTileSource = remember {
-        XYTileSource(
-            "EsriWorldImagery",
+        object : XYTileSource(
+            "EsriWorldImageryArcGis",
             0,
             19,
             256,
-            ".jpg",
+            "",
             arrayOf("https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/"),
-        )
+        ) {
+            override fun getTileURLString(pMapTileIndex: Long): String =
+                getBaseUrl() +
+                    MapTileIndex.getZoom(pMapTileIndex) + "/" +
+                    MapTileIndex.getY(pMapTileIndex) + "/" +
+                    MapTileIndex.getX(pMapTileIndex)
+        }
     }
 
     Box(
@@ -84,7 +91,7 @@ fun GpsScreen(modifier: Modifier = Modifier) {
                     setTileSource(TileSourceFactory.MAPNIK)
                     setMultiTouchControls(true)
                     minZoomLevel = 3.0
-                    maxZoomLevel = 20.0
+                    maxZoomLevel = 19.0
                     controller.setZoom(17.0)
                 }
             },
