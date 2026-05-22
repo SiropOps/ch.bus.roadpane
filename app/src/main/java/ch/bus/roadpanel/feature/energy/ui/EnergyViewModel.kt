@@ -47,7 +47,7 @@ class EnergyViewModel(private val repository: VictronRepository) : ViewModel() {
             .getOrElse { exception ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = exception.message ?: "Unable to reach Victron health endpoint",
+                    errorMessage = exception.message ?: "Impossible de joindre le point d'état Victron",
                     waitingForMqttData = false,
                 )
                 return
@@ -72,7 +72,7 @@ class EnergyViewModel(private val repository: VictronRepository) : ViewModel() {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         health = health,
-                        errorMessage = exception.message ?: "Unable to read Victron metrics",
+                        errorMessage = exception.message ?: "Impossible de lire les mesures Victron",
                         waitingForMqttData = false,
                     )
                 }

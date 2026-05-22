@@ -23,7 +23,7 @@ class GpsViewModel(private val repository: GpsRepository) : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             runCatching { repository.fetchGps() }
                 .onSuccess { _uiState.value = GpsUiState(data = it) }
-                .onFailure { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message ?: "Unknown error") }
+                .onFailure { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message ?: "Erreur inconnue") }
         }
     }
 

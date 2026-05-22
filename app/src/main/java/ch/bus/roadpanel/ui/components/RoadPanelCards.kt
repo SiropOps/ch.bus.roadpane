@@ -226,9 +226,9 @@ fun ConnectionStatusChip(
     modifier: Modifier = Modifier,
 ) {
     val text = when (connected) {
-        true -> "MQTT connected"
-        false -> "MQTT offline"
-        null -> "MQTT unknown"
+        true -> "MQTT connecté"
+        false -> "MQTT hors ligne"
+        null -> "MQTT inconnu"
     }
     val color = when (connected) {
         true -> RoadPanelAccent

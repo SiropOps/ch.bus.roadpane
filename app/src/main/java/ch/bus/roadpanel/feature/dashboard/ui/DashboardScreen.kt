@@ -47,6 +47,7 @@ import ch.bus.roadpanel.ui.components.RoadPanelCard
 import ch.bus.roadpanel.ui.components.RoadPanelIconKind
 import ch.bus.roadpanel.ui.components.StatusPill
 import ch.bus.roadpanel.ui.components.TelemetryCard
+import ch.bus.roadpanel.ui.components.roadPanelBottomBarContentPadding
 import ch.bus.roadpanel.ui.theme.RoadPanelAccent
 import ch.bus.roadpanel.ui.theme.RoadPanelCanvas
 import ch.bus.roadpanel.ui.theme.RoadPanelError
@@ -103,7 +104,7 @@ private fun DashboardContent(
                     start = 22.dp,
                     top = 28.dp,
                     end = 22.dp,
-                    bottom = 126.dp,
+                    bottom = roadPanelBottomBarContentPadding(),
                 ),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
@@ -116,13 +117,13 @@ private fun DashboardContent(
                     )
                 }
                 item {
-                    DashboardSection(title = "Vehicle telemetry") {
+                    DashboardSection(title = "Télémétrie véhicule") {
                         TelemetryGrid(
                             items = listOf(
                                 DashboardMetric("GPS", gpsStatusLabel(gpsState), null, gpsDetailLabel(gpsState), RoadPanelIconKind.Gps, RoadPanelSky),
-                                DashboardMetric("Speed", gpsState.data?.speed?.format(1) ?: "--", "km/h", "Live navigation stream", RoadPanelIconKind.Speed, RoadPanelAccent),
-                                DashboardMetric("Altitude", gpsState.data?.altitude?.format(0) ?: "--", "m", "Latest GPS altitude", RoadPanelIconKind.Altitude, RoadPanelSky),
-                                DashboardMetric("Connection", connectionValue(gpsState), null, connectionDetail(gpsState), RoadPanelIconKind.Connection, connectionColor(gpsState)),
+                                DashboardMetric("Vitesse", gpsState.data?.speed?.format(1) ?: "--", "km/h", "Flux de navigation en direct", RoadPanelIconKind.Speed, RoadPanelAccent),
+                                DashboardMetric("Altitude", gpsState.data?.altitude?.format(0) ?: "--", "m", "Dernière altitude GPS", RoadPanelIconKind.Altitude, RoadPanelSky),
+                                DashboardMetric("Connexion", connectionValue(gpsState), null, connectionDetail(gpsState), RoadPanelIconKind.Connection, connectionColor(gpsState)),
                             ),
                         )
                     }
@@ -145,7 +146,7 @@ private fun DashboardHeader(state: GpsUiState) {
             fontWeight = FontWeight.Bold,
         )
         Text(
-            text = "Van telemetry, navigation and off-grid systems at a glance.",
+            text = "Télémétrie, navigation et systèmes hors réseau du van en un coup d'œil.",
             style = MaterialTheme.typography.bodyLarge,
             color = RoadPanelMuted,
         )
@@ -165,11 +166,11 @@ private fun CompactPositionCard(state: GpsUiState) {
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        text = "Current position",
+                        text = "Position actuelle",
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = state.data?.time ?: "Waiting for GPS",
+                        text = state.data?.time ?: "En attente du GPS",
                         style = MaterialTheme.typography.bodyMedium,
                         color = RoadPanelMuted,
                     )
@@ -239,29 +240,29 @@ private data class DashboardMetric(
 )
 
 private fun gpsStatusLabel(state: GpsUiState): String = when {
-    state.data != null -> "Locked"
-    state.isLoading -> "Searching"
-    state.error != null -> "Offline"
-    else -> "Standby"
+    state.data != null -> "Verrouillé"
+    state.isLoading -> "Recherche"
+    state.error != null -> "Hors ligne"
+    else -> "Veille"
 }
 
 private fun gpsDetailLabel(state: GpsUiState): String = when {
-    state.data != null -> "Updated at ${state.data.time}"
-    state.isLoading -> "Querying vehicle GPS stream"
+    state.data != null -> "Mis à jour à ${state.data.time}"
+    state.isLoading -> "Interrogation du flux GPS véhicule"
     state.error != null -> state.error
-    else -> "Ready"
+    else -> "Prêt"
 }
 
 private fun connectionValue(state: GpsUiState): String = when {
-    state.error != null -> "Offline"
-    state.isLoading -> "Syncing"
-    else -> "Online"
+    state.error != null -> "Hors ligne"
+    state.isLoading -> "Synchronisation"
+    else -> "En ligne"
 }
 
 private fun connectionDetail(state: GpsUiState): String = when {
-    state.error != null -> "Vehicle access point unavailable"
-    state.isLoading -> "Refreshing telemetry"
-    else -> "GPS API link operational"
+    state.error != null -> "Point d'accès du véhicule indisponible"
+    state.isLoading -> "Actualisation de la télémétrie"
+    else -> "Lien API GPS opérationnel"
 }
 
 private fun connectionColor(state: GpsUiState) = if (state.error == null) RoadPanelAccent else RoadPanelError

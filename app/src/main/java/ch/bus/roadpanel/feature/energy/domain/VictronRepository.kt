@@ -20,4 +20,4 @@ class VictronRepository(private val api: VictronApi) {
     }
 }
 
-class WaitingForMqttDataException : Exception("Waiting for MPPT data")
+class WaitingForMqttDataException : Exception("En attente des données MPPT")

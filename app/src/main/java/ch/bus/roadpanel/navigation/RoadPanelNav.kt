@@ -35,12 +35,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import ch.bus.roadpanel.feature.control.ui.ControlScreen
 import ch.bus.roadpanel.feature.dashboard.ui.DashboardScreen
 import ch.bus.roadpanel.feature.energy.ui.EnergyScreen
 import ch.bus.roadpanel.feature.gps.ui.GpsScreen
 import ch.bus.roadpanel.ui.components.RoadPanelCard
 import ch.bus.roadpanel.ui.components.RoadPanelIcon
 import ch.bus.roadpanel.ui.components.RoadPanelIconKind
+import ch.bus.roadpanel.ui.components.roadPanelBottomBarContentPadding
 import ch.bus.roadpanel.ui.theme.RoadPanelAccent
 import ch.bus.roadpanel.ui.theme.RoadPanelCanvas
 import ch.bus.roadpanel.ui.theme.RoadPanelMuted
@@ -55,7 +57,7 @@ sealed class TopLevelDestination(
     data object Gps : TopLevelDestination("gps", "Carte", RoadPanelIconKind.Map)
     data object Power : TopLevelDestination("power", "Énergie", RoadPanelIconKind.Power)
     data object Sensors : TopLevelDestination("sensors", "Capteurs", RoadPanelIconKind.Sensors)
-    data object Settings : TopLevelDestination("settings", "Réglages", RoadPanelIconKind.Settings)
+    data object Settings : TopLevelDestination("settings", "Commandes", RoadPanelIconKind.Settings)
 }
 
 @Composable
@@ -85,7 +87,7 @@ fun RoadPanelApp() {
             composable(TopLevelDestination.Gps.route) { GpsScreen() }
             composable(TopLevelDestination.Power.route) { EnergyScreen() }
             composable(TopLevelDestination.Sensors.route) { PlaceholderScreen("Baie de capteurs") }
-            composable(TopLevelDestination.Settings.route) { PlaceholderScreen("Réglages") }
+            composable(TopLevelDestination.Settings.route) { ControlScreen() }
         }
 
         RoadPanelBottomBar(
@@ -198,7 +200,12 @@ private fun PlaceholderScreen(label: String) {
         modifier = Modifier
             .fillMaxSize()
             .background(RoadPanelCanvas)
-            .padding(horizontal = 22.dp, vertical = 32.dp),
+            .padding(
+                start = 22.dp,
+                top = 32.dp,
+                end = 22.dp,
+                bottom = roadPanelBottomBarContentPadding(),
+            ),
         contentAlignment = Alignment.Center,
     ) {
         RoadPanelCard {

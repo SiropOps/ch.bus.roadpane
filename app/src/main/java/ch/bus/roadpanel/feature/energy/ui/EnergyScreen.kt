@@ -43,6 +43,7 @@ import ch.bus.roadpanel.ui.components.RoadPanelCard
 import ch.bus.roadpanel.ui.components.RoadPanelIcon
 import ch.bus.roadpanel.ui.components.RoadPanelIconKind
 import ch.bus.roadpanel.ui.components.StatusPill
+import ch.bus.roadpanel.ui.components.roadPanelBottomBarContentPadding
 import ch.bus.roadpanel.ui.theme.RoadPanelAccent
 import ch.bus.roadpanel.ui.theme.RoadPanelCanvas
 import ch.bus.roadpanel.ui.theme.RoadPanelError
@@ -86,7 +87,7 @@ private fun EnergyContent(
                 start = 22.dp,
                 top = 28.dp,
                 end = 22.dp,
-                bottom = 126.dp,
+                bottom = roadPanelBottomBarContentPadding(),
             ),
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
@@ -143,7 +144,7 @@ private fun EnergyHeader(
                     color = energyStatusColor(state),
                 )
                 Text(
-                    text = "Energy",
+                    text = "Énergie",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                 )
@@ -151,7 +152,7 @@ private fun EnergyHeader(
             RefreshButton(onRefresh = onRefresh)
         }
         Text(
-            text = state.lastUpdated ?: state.metrics?.timestamp ?: "MPPT metrics refresh every 5 seconds",
+            text = state.lastUpdated ?: state.metrics?.timestamp ?: "Les données MPPT s'actualisent toutes les 5 secondes",
             style = MaterialTheme.typography.bodyMedium,
             color = RoadPanelMuted,
         )
@@ -200,11 +201,11 @@ private fun SolarInputCard(state: EnergyUiState) {
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Solar input",
+                        text = "Production solaire",
                         style = MaterialTheme.typography.titleLarge,
                     )
                     Text(
-                        text = "Live MPPT production",
+                        text = "Production MPPT en direct",
                         style = MaterialTheme.typography.bodyMedium,
                         color = RoadPanelMuted,
                     )
@@ -217,7 +218,7 @@ private fun SolarInputCard(state: EnergyUiState) {
             }
 
             MetricValue(
-                label = "Power",
+                label = "Puissance",
                 value = metrics.solarPower.format(0),
                 unit = "W",
                 large = true,
@@ -232,7 +233,7 @@ private fun EnergyMetricGrid(
     onRefresh: () -> Unit,
 ) {
     val metrics = state.metrics ?: return
-    DashboardSection(title = "MPPT overview") {
+    DashboardSection(title = "Aperçu MPPT") {
         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 BatteryCard(
@@ -242,8 +243,8 @@ private fun EnergyMetricGrid(
                 )
                 CompactMetricCard(
                     modifier = Modifier.weight(1f),
-                    title = "Today yield",
-                    label = "Harvested",
+                    title = "Production du jour",
+                    label = "Récolté",
                     value = metrics.yieldToday.format(0),
                     unit = "Wh",
                     icon = RoadPanelIconKind.Solar,
@@ -253,8 +254,8 @@ private fun EnergyMetricGrid(
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 CompactMetricCard(
                     modifier = Modifier.weight(1f),
-                    title = "Charge state",
-                    label = "Controller",
+                    title = "État de charge",
+                    label = "Contrôleur",
                     value = metrics.chargeState.toChargeStateLabel(),
                     icon = RoadPanelIconKind.Power,
                     accent = RoadPanelAccent,
@@ -285,7 +286,7 @@ private fun BatteryCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Battery",
+                    text = "Batterie",
                     style = MaterialTheme.typography.titleMedium,
                 )
                 IconBubble(
@@ -295,12 +296,12 @@ private fun BatteryCard(
                 )
             }
             MetricValue(
-                label = "Voltage",
+                label = "Tension",
                 value = voltage.format(1),
                 unit = "V",
             )
             MetricValue(
-                label = "Charge current",
+                label = "Courant de charge",
                 value = current.format(1),
                 unit = "A",
             )
@@ -371,11 +372,11 @@ private fun ManualRefreshCard(
             )
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Refresh",
+                    text = "Actualiser",
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
-                    text = "Manual update",
+                    text = "Mise à jour manuelle",
                     style = MaterialTheme.typography.bodyMedium,
                     color = RoadPanelMuted,
                 )
@@ -397,13 +398,13 @@ private fun ConnectionCard(state: EnergyUiState) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Connection",
+                    text = "Connexion",
                     style = MaterialTheme.typography.titleMedium,
                 )
                 ConnectionStatusChip(connected = state.health?.mqttConnected)
             }
             Text(
-                text = state.health?.lastMessageTimestamp ?: "No MPPT message received yet",
+                text = state.health?.lastMessageTimestamp ?: "Aucun message MPPT reçu pour l'instant",
                 style = MaterialTheme.typography.bodyMedium,
                 color = RoadPanelMuted,
             )
@@ -429,7 +430,7 @@ fun EnergySummaryCard(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        text = "Energy",
+                        text = "Énergie",
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
@@ -443,15 +444,15 @@ fun EnergySummaryCard(
 
             if (state.errorMessage != null) {
                 InlineAction(
-                    text = "Victron unavailable",
+                    text = "Victron indisponible",
                     detail = state.errorMessage,
                     color = RoadPanelError,
                     onClick = onRefresh,
                 )
             } else if (state.waitingForMqttData) {
                 InlineAction(
-                    text = "Waiting for MPPT data...",
-                    detail = "Tap to retry",
+                    text = "En attente des données MPPT...",
+                    detail = "Touchez pour réessayer",
                     color = RoadPanelWarning,
                     onClick = onRefresh,
                 )
@@ -459,13 +460,13 @@ fun EnergySummaryCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     SummaryMetric(
                         modifier = Modifier.weight(1f),
-                        label = "Battery",
+                        label = "Batterie",
                         value = state.metrics?.batteryVoltage?.format(1) ?: "--",
                         unit = "V",
                     )
                     SummaryMetric(
                         modifier = Modifier.weight(1f),
-                        label = "Solar",
+                        label = "Solaire",
                         value = state.metrics?.solarPower?.format(0) ?: "--",
                         unit = "W",
                     )
@@ -473,13 +474,13 @@ fun EnergySummaryCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     SummaryMetric(
                         modifier = Modifier.weight(1f),
-                        label = "Yield",
+                        label = "Production",
                         value = state.metrics?.yieldToday?.format(0) ?: "--",
                         unit = "Wh",
                     )
                     SummaryMetric(
                         modifier = Modifier.weight(1f),
-                        label = "State",
+                        label = "État",
                         value = state.metrics?.chargeState?.toChargeStateLabel() ?: "--",
                     )
                 }
@@ -524,11 +525,11 @@ private fun LoadingEnergyCard() {
                 strokeWidth = 4.dp,
             )
             Text(
-                text = "Reading MPPT telemetry...",
+                text = "Lecture de la télémétrie MPPT...",
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = "Victron metrics will appear as soon as the Raspberry Pi responds.",
+                text = "Les mesures Victron apparaîtront dès que le Raspberry Pi répondra.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = RoadPanelMuted,
             )
@@ -542,10 +543,10 @@ private fun EnergyErrorCard(
     onRetry: () -> Unit,
 ) {
     StateCard(
-        title = "Energy data unavailable",
+        title = "Données énergie indisponibles",
         detail = message,
         color = RoadPanelError,
-        buttonText = "Retry",
+        buttonText = "Réessayer",
         onClick = onRetry,
     )
 }
@@ -553,10 +554,10 @@ private fun EnergyErrorCard(
 @Composable
 private fun WaitingForMqttDataCard(onRetry: () -> Unit) {
     StateCard(
-        title = "Waiting for MPPT data...",
-        detail = "The Victron API is online, but no valid MQTT metrics have arrived yet.",
+        title = "En attente des données MPPT...",
+        detail = "L'API Victron est en ligne, mais aucune mesure MQTT valide n'est encore arrivée.",
         color = RoadPanelWarning,
-        buttonText = "Refresh",
+        buttonText = "Actualiser",
         onClick = onRetry,
     )
 }
@@ -564,10 +565,10 @@ private fun WaitingForMqttDataCard(onRetry: () -> Unit) {
 @Composable
 private fun EmptyEnergyCard(onRetry: () -> Unit) {
     StateCard(
-        title = "No energy metrics yet",
-        detail = "Tap refresh to query the Victron endpoint.",
+        title = "Aucune mesure d'énergie pour le moment",
+        detail = "Touchez Actualiser pour interroger le point Victron.",
         color = RoadPanelSky,
-        buttonText = "Refresh",
+        buttonText = "Actualiser",
         onClick = onRetry,
     )
 }
@@ -601,7 +602,7 @@ private fun StateCard(
             )
             InlineAction(
                 text = buttonText,
-                detail = "Manual request",
+                detail = "Requête manuelle",
                 color = color,
                 onClick = onClick,
             )
@@ -680,11 +681,11 @@ private fun IconBubble(
 }
 
 private fun energyStatusText(state: EnergyUiState): String = when {
-    state.errorMessage != null -> "Offline"
-    state.waitingForMqttData -> "Waiting"
-    state.isLoading -> "Syncing"
-    state.metrics != null -> "Live"
-    else -> "Idle"
+    state.errorMessage != null -> "Hors ligne"
+    state.waitingForMqttData -> "En attente"
+    state.isLoading -> "Synchronisation"
+    state.metrics != null -> "En direct"
+    else -> "Inactif"
 }
 
 private fun energyStatusColor(state: EnergyUiState): Color = when {
@@ -695,14 +696,28 @@ private fun energyStatusColor(state: EnergyUiState): Color = when {
 }
 
 private fun summarySubtitle(state: EnergyUiState): String = when {
-    state.waitingForMqttData -> "Waiting for MPPT data"
-    state.errorMessage != null -> "Victron endpoint offline"
-    state.metrics != null -> "${state.metrics.solarPower.format(0)} W solar now"
-    state.isLoading -> "Synchronizing MPPT"
-    else -> "No data yet"
+    state.waitingForMqttData -> "En attente des données MPPT"
+    state.errorMessage != null -> "Point Victron hors ligne"
+    state.metrics != null -> "${state.metrics.solarPower.format(0)} W solaires maintenant"
+    state.isLoading -> "Synchronisation MPPT"
+    else -> "Aucune donnée pour le moment"
 }
 
 private fun String.toChargeStateLabel(): String {
+    val normalized = lowercase(Locale.US)
+    val translated = when (normalized) {
+        "off" -> "Arrêt"
+        "low_power", "low-power", "low power" -> "Puissance faible"
+        "fault" -> "Défaut"
+        "bulk" -> "Charge principale"
+        "absorption" -> "Absorption"
+        "float" -> "Maintien"
+        "storage" -> "Stockage"
+        "equalize", "equalization" -> "Égalisation"
+        else -> null
+    }
+    if (translated != null) return translated
+
     return split("_", "-", " ")
         .filter { it.isNotBlank() }
         .joinToString(" ") { part ->
