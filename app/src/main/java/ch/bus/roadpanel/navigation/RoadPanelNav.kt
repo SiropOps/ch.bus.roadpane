@@ -36,6 +36,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import ch.bus.roadpanel.feature.dashboard.ui.DashboardScreen
+import ch.bus.roadpanel.feature.energy.ui.EnergyScreen
 import ch.bus.roadpanel.feature.gps.ui.GpsScreen
 import ch.bus.roadpanel.ui.components.RoadPanelCard
 import ch.bus.roadpanel.ui.components.RoadPanelIcon
@@ -82,7 +83,7 @@ fun RoadPanelApp() {
         ) {
             composable(TopLevelDestination.Home.route) { DashboardScreen() }
             composable(TopLevelDestination.Gps.route) { GpsScreen() }
-            composable(TopLevelDestination.Power.route) { PlaceholderScreen("Systèmes énergétiques") }
+            composable(TopLevelDestination.Power.route) { EnergyScreen() }
             composable(TopLevelDestination.Sensors.route) { PlaceholderScreen("Baie de capteurs") }
             composable(TopLevelDestination.Settings.route) { PlaceholderScreen("Réglages") }
         }

@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ch.bus.roadpanel.ui.theme.RoadPanelAccent
 import ch.bus.roadpanel.ui.theme.RoadPanelAccentSoft
+import ch.bus.roadpanel.ui.theme.RoadPanelError
 import ch.bus.roadpanel.ui.theme.RoadPanelLine
 import ch.bus.roadpanel.ui.theme.RoadPanelMuted
 import ch.bus.roadpanel.ui.theme.RoadPanelSurface
@@ -185,6 +186,60 @@ fun StatusPill(
             color = color,
         )
     }
+}
+
+@Composable
+fun MetricValue(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    unit: String? = null,
+    large: Boolean = false,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = RoadPanelMuted,
+        )
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = value,
+                style = if (large) MaterialTheme.typography.displayLarge else MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            unit?.let {
+                Text(
+                    modifier = Modifier.padding(start = 5.dp, bottom = if (large) 9.dp else 4.dp),
+                    text = it,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = RoadPanelMuted,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ConnectionStatusChip(
+    connected: Boolean?,
+    modifier: Modifier = Modifier,
+) {
+    val text = when (connected) {
+        true -> "MQTT connected"
+        false -> "MQTT offline"
+        null -> "MQTT unknown"
+    }
+    val color = when (connected) {
+        true -> RoadPanelAccent
+        false -> RoadPanelError
+        null -> RoadPanelMuted
+    }
+    StatusPill(
+        modifier = modifier,
+        text = text,
+        color = color,
+    )
 }
 
 @Preview(showBackground = true)

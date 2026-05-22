@@ -8,12 +8,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,11 +31,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.bus.roadpanel.core.network.NetworkModule
+import ch.bus.roadpanel.feature.energy.data.VictronHealthDto
+import ch.bus.roadpanel.feature.energy.data.VictronMetricsDto
+import ch.bus.roadpanel.feature.energy.domain.VictronRepository
+import ch.bus.roadpanel.feature.energy.ui.EnergySummaryCard
+import ch.bus.roadpanel.feature.energy.ui.EnergyUiState
+import ch.bus.roadpanel.feature.energy.ui.EnergyViewModel
 import ch.bus.roadpanel.feature.gps.domain.GpsRepository
 import ch.bus.roadpanel.feature.gps.ui.GpsReading
 import ch.bus.roadpanel.feature.gps.ui.GpsUiState
 import ch.bus.roadpanel.feature.gps.ui.GpsViewModel
 import ch.bus.roadpanel.ui.components.DashboardSection
+import ch.bus.roadpanel.ui.components.MetricValue
 import ch.bus.roadpanel.ui.components.RoadPanelCard
 import ch.bus.roadpanel.ui.components.RoadPanelIconKind
 import ch.bus.roadpanel.ui.components.StatusPill
@@ -42,20 +52,34 @@ import ch.bus.roadpanel.ui.theme.RoadPanelCanvas
 import ch.bus.roadpanel.ui.theme.RoadPanelError
 import ch.bus.roadpanel.ui.theme.RoadPanelMuted
 import ch.bus.roadpanel.ui.theme.RoadPanelSky
-import ch.bus.roadpanel.ui.theme.RoadPanelSolar
+import ch.bus.roadpanel.ui.theme.RoadPanelSurfaceSoft
 import ch.bus.roadpanel.ui.theme.RoadPanelTheme
 import java.util.Locale
 
 @Composable
 fun DashboardScreen(modifier: Modifier = Modifier) {
-    val viewModel: GpsViewModel = viewModel(factory = GpsViewModel.factory(GpsRepository(NetworkModule.gpsApi)))
-    val state by viewModel.uiState.collectAsState()
-    DashboardContent(state = state, modifier = modifier)
+    val gpsViewModel: GpsViewModel = viewModel(
+        factory = GpsViewModel.factory(GpsRepository(NetworkModule.gpsApi)),
+    )
+    val energyViewModel: EnergyViewModel = viewModel(
+        factory = EnergyViewModel.factory(VictronRepository(NetworkModule.victronApi)),
+    )
+    val gpsState by gpsViewModel.uiState.collectAsState()
+    val energyState by energyViewModel.uiState.collectAsState()
+
+    DashboardContent(
+        gpsState = gpsState,
+        energyState = energyState,
+        onEnergyRefresh = energyViewModel::refresh,
+        modifier = modifier,
+    )
 }
 
 @Composable
 private fun DashboardContent(
-    state: GpsUiState,
+    gpsState: GpsUiState,
+    energyState: EnergyUiState,
+    onEnergyRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -75,34 +99,30 @@ private fun DashboardContent(
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                contentPadding = PaddingValues(
                     start = 22.dp,
                     top = 28.dp,
                     end = 22.dp,
                     bottom = 126.dp,
                 ),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                item { DashboardHeader(state = state) }
-                item { RouteSummaryCard(state = state) }
+                item { DashboardHeader(state = gpsState) }
+                item { CompactPositionCard(state = gpsState) }
                 item {
-                    DashboardSection(title = "Télémétrie du véhicule") {
-                        TelemetryGrid(
-                            items = listOf(
-                                DashboardMetric("Batterie", "87", "%", "Batterie auxiliaire estimée", RoadPanelIconKind.Battery, RoadPanelAccent),
-                                DashboardMetric("GPS", gpsStatusLabel(state), null, gpsDetailLabel(state), RoadPanelIconKind.Gps, RoadPanelSky),
-                                DashboardMetric("Vitesse", state.data?.speed?.format(1) ?: "--", "km/h", "Flux de navigation en direct", RoadPanelIconKind.Speed, RoadPanelAccent),
-                                DashboardMetric("Altitude", state.data?.altitude?.format(0) ?: "--", "m", "Flux barométrique en attente", RoadPanelIconKind.Altitude, RoadPanelSky),
-                            ),
-                        )
-                    }
+                    EnergySummaryCard(
+                        state = energyState,
+                        onRefresh = onEnergyRefresh,
+                    )
                 }
                 item {
-                    DashboardSection(title = "Énergie et systèmes") {
+                    DashboardSection(title = "Vehicle telemetry") {
                         TelemetryGrid(
                             items = listOf(
-                                DashboardMetric("Solaire", "124", "W", "Temporaire jusqu'à l'arrivée de l'API solaire", RoadPanelIconKind.Solar, RoadPanelSolar),
-                                DashboardMetric("Connexion", connectionValue(state), null, connectionDetail(state), RoadPanelIconKind.Connection, connectionColor(state)),
+                                DashboardMetric("GPS", gpsStatusLabel(gpsState), null, gpsDetailLabel(gpsState), RoadPanelIconKind.Gps, RoadPanelSky),
+                                DashboardMetric("Speed", gpsState.data?.speed?.format(1) ?: "--", "km/h", "Live navigation stream", RoadPanelIconKind.Speed, RoadPanelAccent),
+                                DashboardMetric("Altitude", gpsState.data?.altitude?.format(0) ?: "--", "m", "Latest GPS altitude", RoadPanelIconKind.Altitude, RoadPanelSky),
+                                DashboardMetric("Connection", connectionValue(gpsState), null, connectionDetail(gpsState), RoadPanelIconKind.Connection, connectionColor(gpsState)),
                             ),
                         )
                     }
@@ -125,7 +145,7 @@ private fun DashboardHeader(state: GpsUiState) {
             fontWeight = FontWeight.Bold,
         )
         Text(
-            text = "Télémétrie du van, navigation et systèmes hors réseau en un coup d'œil.",
+            text = "Van telemetry, navigation and off-grid systems at a glance.",
             style = MaterialTheme.typography.bodyLarge,
             color = RoadPanelMuted,
         )
@@ -133,25 +153,25 @@ private fun DashboardHeader(state: GpsUiState) {
 }
 
 @Composable
-private fun RouteSummaryCard(state: GpsUiState) {
+private fun CompactPositionCard(state: GpsUiState) {
     RoadPanelCard(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(22.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        text = "Position actuelle",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = RoadPanelMuted,
+                        text = "Current position",
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = state.data?.time ?: "En attente du GPS",
-                        style = MaterialTheme.typography.titleLarge,
+                        text = state.data?.time ?: "Waiting for GPS",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = RoadPanelMuted,
                     )
                 }
                 StatusPill(
@@ -159,15 +179,29 @@ private fun RouteSummaryCard(state: GpsUiState) {
                     color = connectionColor(state),
                 )
             }
-
-            Text(
-                text = state.data?.let {
-                    "${it.mapLatitude.format(5)}, ${it.mapLongitude.format(5)}"
-                } ?: "Les coordonnées s'afficheront dès que le flux GPS répondra.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = RoadPanelMuted,
-            )
         }
+    }
+}
+
+@Composable
+private fun PositionMetric(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    unit: String? = null,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        color = RoadPanelSurfaceSoft,
+        tonalElevation = 0.dp,
+    ) {
+        MetricValue(
+            modifier = Modifier.padding(13.dp),
+            label = label,
+            value = value,
+            unit = unit,
+        )
     }
 }
 
@@ -205,29 +239,29 @@ private data class DashboardMetric(
 )
 
 private fun gpsStatusLabel(state: GpsUiState): String = when {
-    state.data != null -> "Verrouillé"
-    state.isLoading -> "Recherche"
-    state.error != null -> "Hors ligne"
-    else -> "Veille"
+    state.data != null -> "Locked"
+    state.isLoading -> "Searching"
+    state.error != null -> "Offline"
+    else -> "Standby"
 }
 
 private fun gpsDetailLabel(state: GpsUiState): String = when {
-    state.data != null -> "Position mise à jour à ${state.data.time}"
-    state.isLoading -> "Interrogation du flux véhicule"
+    state.data != null -> "Updated at ${state.data.time}"
+    state.isLoading -> "Querying vehicle GPS stream"
     state.error != null -> state.error
-    else -> "Prêt"
+    else -> "Ready"
 }
 
 private fun connectionValue(state: GpsUiState): String = when {
-    state.error != null -> "Hors ligne"
-    state.isLoading -> "Synchronisation"
-    else -> "En ligne"
+    state.error != null -> "Offline"
+    state.isLoading -> "Syncing"
+    else -> "Online"
 }
 
 private fun connectionDetail(state: GpsUiState): String = when {
-    state.error != null -> "Point d'accès véhicule indisponible"
-    state.isLoading -> "Actualisation de la télémétrie"
-    else -> "Lien API opérationnel"
+    state.error != null -> "Vehicle access point unavailable"
+    state.isLoading -> "Refreshing telemetry"
+    else -> "GPS API link operational"
 }
 
 private fun connectionColor(state: GpsUiState) = if (state.error == null) RoadPanelAccent else RoadPanelError
@@ -239,7 +273,7 @@ private fun Double.format(decimals: Int): String = "%.${decimals}f".format(Local
 private fun DashboardContentPreview() {
     RoadPanelTheme {
         DashboardContent(
-            state = GpsUiState(
+            gpsState = GpsUiState(
                 data = GpsReading(
                     mapLatitude = 46.5197,
                     mapLongitude = 6.6323,
@@ -249,6 +283,23 @@ private fun DashboardContentPreview() {
                     time = "20:42",
                 ),
             ),
+            energyState = EnergyUiState(
+                health = VictronHealthDto(
+                    status = "ok",
+                    mqttConnected = true,
+                    lastMessageTimestamp = "2026-05-22T08:32:11.912940+00:00",
+                ),
+                metrics = VictronMetricsDto(
+                    timestamp = "2026-05-22T08:32:11.912940+00:00",
+                    batteryChargingCurrent = 0.6,
+                    batteryVoltage = 12.6,
+                    chargeState = "bulk",
+                    solarPower = 8.0,
+                    yieldToday = 20.0,
+                ),
+                lastUpdated = "2026-05-22T08:32:11.912940+00:00",
+            ),
+            onEnergyRefresh = {},
         )
     }
 }
