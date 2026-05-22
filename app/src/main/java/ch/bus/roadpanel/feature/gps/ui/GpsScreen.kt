@@ -235,35 +235,6 @@ private fun GpsTelemetrySheet(
                     unit = "deg",
                 )
             }
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onRefresh),
-                shape = RoundedCornerShape(18.dp),
-                color = RoadPanelSky.copy(alpha = 0.10f),
-                contentColor = RoadPanelSky,
-                tonalElevation = 0.dp,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = state.data?.let {
-                            "${it.mapLatitude.format(5)}, ${it.mapLongitude.format(5)}"
-                        } ?: "Actualiser les coordonnées GPS",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = RoadPanelSky,
-                    )
-                    RoadPanelIcon(
-                        kind = RoadPanelIconKind.Refresh,
-                        modifier = Modifier.size(18.dp),
-                        color = RoadPanelSky,
-                    )
-                }
-            }
         }
     }
 }
