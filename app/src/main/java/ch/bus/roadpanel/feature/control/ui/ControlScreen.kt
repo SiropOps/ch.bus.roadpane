@@ -83,8 +83,6 @@ fun ControlScreen(modifier: Modifier = Modifier) {
                 viewModel.refreshDeviceState()
             }
         },
-        onConnect = viewModel::connect,
-        onDisconnect = viewModel::disconnect,
         onWifiToggle = viewModel::setWifiEnabled,
         onVpnConnect = vpnViewModel::connectVanVpn,
         onVpnDisconnect = vpnViewModel::disconnectVanVpn,
@@ -98,8 +96,6 @@ private fun ControlContent(
     state: ControlUiState,
     vpnState: VpnUiState,
     onRequestPermission: () -> Unit,
-    onConnect: () -> Unit,
-    onDisconnect: () -> Unit,
     onWifiToggle: (Boolean) -> Unit,
     onVpnConnect: () -> Unit,
     onVpnDisconnect: () -> Unit,
@@ -134,12 +130,9 @@ private fun ControlContent(
                 WifiControlCard(
                     state = state,
                     onRequestPermission = onRequestPermission,
-                    onConnect = onConnect,
-                    onDisconnect = onDisconnect,
                     onWifiToggle = onWifiToggle,
                 )
             }
-            item { BluetoothStatusCard(state = state) }
         }
     }
 }
@@ -168,14 +161,22 @@ private fun ControlHeader(state: ControlUiState) {
 private fun WifiControlCard(
     state: ControlUiState,
     onRequestPermission: () -> Unit,
-    onConnect: () -> Unit,
-    onDisconnect: () -> Unit,
     onWifiToggle: (Boolean) -> Unit,
 ) {
+    val canToggle = state.isBluetoothAvailable &&
+        state.isBluetoothEnabled &&
+        state.isPermissionGranted &&
+        !state.isWifiBusy
+    val accent = when {
+        state.wifiCommandPhase == WifiCommandPhase.ERROR -> RoadPanelError
+        state.wifiEnabled -> RoadPanelAccent
+        else -> RoadPanelMuted
+    }
+
     RoadPanelCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(22.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -184,64 +185,58 @@ private fun WifiControlCard(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Contrôle Wi-Fi",
+                        text = "Wi-Fi du van",
                         style = MaterialTheme.typography.titleLarge,
                     )
                     Text(
-                        text = if (state.wifiEnabled) "Wi-Fi du van activé" else "Wi-Fi du van désactivé",
+                        text = wifiStatusText(state),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = RoadPanelMuted,
+                        color = wifiStatusColor(state),
                     )
                 }
                 IconBubble(
                     icon = RoadPanelIconKind.Connection,
-                    accent = if (state.wifiEnabled) RoadPanelAccent else RoadPanelMuted,
+                    accent = accent,
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        enabled = canToggle,
+                        onClick = { onWifiToggle(!state.wifiEnabled) },
+                    ),
+                shape = RoundedCornerShape(22.dp),
+                color = if (state.wifiEnabled) RoadPanelAccent.copy(alpha = 0.12f) else RoadPanelSurfaceSoft,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                tonalElevation = 0.dp,
             ) {
-                Text(
-                    text = if (state.wifiEnabled) "ACTIF" else "ARRÊT",
-                    style = MaterialTheme.typography.displayMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (state.wifiEnabled) RoadPanelAccent else MaterialTheme.colorScheme.onSurface,
-                )
-                Switch(
-                    checked = state.wifiEnabled,
-                    onCheckedChange = onWifiToggle,
-                    enabled = state.isConnected,
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 18.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = if (state.wifiEnabled) "ON" else "OFF",
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (state.wifiEnabled) RoadPanelAccent else MaterialTheme.colorScheme.onSurface,
+                    )
+                    Switch(
+                        checked = state.wifiEnabled,
+                        onCheckedChange = onWifiToggle,
+                        enabled = canToggle,
+                    )
+                }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (!state.isPermissionGranted) {
-                    ControlAction(
-                        text = "Autoriser le Bluetooth",
-                        detail = "Requis sur Android 12+",
-                        color = RoadPanelWarning,
-                        onClick = onRequestPermission,
-                    )
-                }
-                if (!state.isConnected) {
-                    ControlAction(
-                        text = if (state.isConnecting) "Connexion..." else "Se connecter à SmartArduino",
-                        detail = "FC:A8:9A:00:0D:9E",
-                        color = RoadPanelAccent,
-                        onClick = onConnect,
-                        enabled = !state.isConnecting,
-                    )
-                } else {
-                    ControlAction(
-                        text = "Déconnecter",
-                        detail = "Fermer la connexion RFCOMM",
-                        color = RoadPanelSky,
-                        onClick = onDisconnect,
-                    )
-                }
+            if (!state.isPermissionGranted) {
+                CompactPermissionAction(onClick = onRequestPermission)
             }
 
             state.errorMessage?.let {
@@ -256,105 +251,38 @@ private fun WifiControlCard(
 }
 
 @Composable
-private fun BluetoothStatusCard(state: ControlUiState) {
-    RoadPanelCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "État Bluetooth",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                StatusPill(
-                    text = if (state.isConnected) "Connecté" else "Hors ligne",
-                    color = if (state.isConnected) RoadPanelAccent else RoadPanelMuted,
-                )
-            }
-            StatusLine(label = "Adaptateur", value = if (state.isBluetoothAvailable) "Disponible" else "Indisponible")
-            StatusLine(label = "Bluetooth", value = if (state.isBluetoothEnabled) "Activé" else "Désactivé")
-            StatusLine(label = "Permission", value = if (state.isPermissionGranted) "Accordée" else "Manquante")
-            Text(
-                text = "Dernière réponse Arduino : ${state.lastResponse ?: "--"}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = RoadPanelMuted,
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatusLine(
-    label: String,
-    value: String,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = RoadPanelMuted,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-        )
-    }
-}
-
-@Composable
-private fun ControlAction(
-    text: String,
-    detail: String,
-    color: Color,
+private fun CompactPermissionAction(
     onClick: () -> Unit,
-    enabled: Boolean = true,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(
-                interactionSource = interactionSource,
+                interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                enabled = enabled,
                 onClick = onClick,
             ),
-        shape = RoundedCornerShape(18.dp),
-        color = if (enabled) color.copy(alpha = 0.10f) else RoadPanelSurfaceSoft,
-        contentColor = if (enabled) color else RoadPanelMuted,
+        shape = RoundedCornerShape(14.dp),
+        color = RoadPanelWarning.copy(alpha = 0.10f),
+        contentColor = RoadPanelWarning,
         tonalElevation = 0.dp,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 11.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (enabled) color else RoadPanelMuted,
-                )
-                Text(
-                    text = detail,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = RoadPanelMuted,
-                )
-            }
+            Text(
+                text = "Autoriser le Bluetooth",
+                style = MaterialTheme.typography.labelLarge,
+                color = RoadPanelWarning,
+            )
             RoadPanelIcon(
                 kind = RoadPanelIconKind.Connection,
                 modifier = Modifier.size(18.dp),
-                color = if (enabled) color else RoadPanelMuted,
+                color = RoadPanelWarning,
             )
         }
     }
@@ -386,15 +314,37 @@ private fun controlStatusText(state: ControlUiState): String = when {
     !state.isBluetoothAvailable -> "Aucun adaptateur"
     !state.isPermissionGranted -> "Permission"
     !state.isBluetoothEnabled -> "Désactivé"
-    state.isConnecting -> "Connexion"
-    state.isConnected -> "En ligne"
+    state.wifiCommandPhase == WifiCommandPhase.CONNECTING -> "Connexion"
+    state.wifiCommandPhase == WifiCommandPhase.SENDING -> "Envoi"
+    state.wifiCommandPhase == WifiCommandPhase.RETRYING -> "Nouvel essai"
+    state.wifiCommandPhase == WifiCommandPhase.ERROR -> "Erreur"
     else -> "Prêt"
 }
 
 private fun controlStatusColor(state: ControlUiState): Color = when {
     !state.isBluetoothAvailable || !state.isBluetoothEnabled -> RoadPanelError
     !state.isPermissionGranted -> RoadPanelWarning
-    state.isConnected -> RoadPanelAccent
+    state.wifiCommandPhase == WifiCommandPhase.ERROR -> RoadPanelError
+    state.wifiCommandPhase == WifiCommandPhase.SUCCESS -> RoadPanelAccent
+    else -> RoadPanelMuted
+}
+
+private fun wifiStatusText(state: ControlUiState): String = when {
+    !state.isBluetoothAvailable -> "Bluetooth indisponible"
+    !state.isPermissionGranted -> "Permission requise"
+    !state.isBluetoothEnabled -> "Bluetooth désactivé"
+    state.wifiCommandPhase == WifiCommandPhase.CONNECTING -> "Connexion..."
+    state.wifiCommandPhase == WifiCommandPhase.SENDING -> "Envoi..."
+    state.wifiCommandPhase == WifiCommandPhase.RETRYING -> "Essai ${state.wifiAttempt}/${state.wifiMaxAttempts}"
+    state.wifiCommandPhase == WifiCommandPhase.ERROR -> "Erreur"
+    else -> "Prêt"
+}
+
+private fun wifiStatusColor(state: ControlUiState): Color = when {
+    !state.isBluetoothAvailable || !state.isBluetoothEnabled -> RoadPanelError
+    !state.isPermissionGranted -> RoadPanelWarning
+    state.wifiCommandPhase == WifiCommandPhase.ERROR -> RoadPanelError
+    state.isWifiBusy -> RoadPanelSky
     else -> RoadPanelMuted
 }
 
@@ -413,8 +363,6 @@ private fun ControlContentPreview() {
             ),
             vpnState = VpnUiState(openVpnInstalled = true),
             onRequestPermission = {},
-            onConnect = {},
-            onDisconnect = {},
             onWifiToggle = {},
             onVpnConnect = {},
             onVpnDisconnect = {},
