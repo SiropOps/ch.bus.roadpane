@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -41,6 +42,11 @@ import ch.bus.roadpanel.feature.gps.domain.GpsRepository
 import ch.bus.roadpanel.feature.gps.ui.GpsReading
 import ch.bus.roadpanel.feature.gps.ui.GpsUiState
 import ch.bus.roadpanel.feature.gps.ui.GpsViewModel
+import ch.bus.roadpanel.feature.vpn.domain.VanConnectivityStatus
+import ch.bus.roadpanel.feature.vpn.ui.ConnectVpnChip
+import ch.bus.roadpanel.feature.vpn.ui.VanStatusChip
+import ch.bus.roadpanel.feature.vpn.ui.VpnUiState
+import ch.bus.roadpanel.feature.vpn.ui.VpnViewModel
 import ch.bus.roadpanel.ui.components.DashboardSection
 import ch.bus.roadpanel.ui.components.MetricValue
 import ch.bus.roadpanel.ui.components.RoadPanelCard
@@ -59,19 +65,24 @@ import java.util.Locale
 
 @Composable
 fun DashboardScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current.applicationContext
     val gpsViewModel: GpsViewModel = viewModel(
         factory = GpsViewModel.factory(GpsRepository(NetworkModule.gpsApi)),
     )
     val energyViewModel: EnergyViewModel = viewModel(
         factory = EnergyViewModel.factory(VictronRepository(NetworkModule.victronApi)),
     )
+    val vpnViewModel: VpnViewModel = viewModel(factory = VpnViewModel.factory(context))
     val gpsState by gpsViewModel.uiState.collectAsState()
     val energyState by energyViewModel.uiState.collectAsState()
+    val vpnState by vpnViewModel.uiState.collectAsState()
 
     DashboardContent(
         gpsState = gpsState,
         energyState = energyState,
+        vpnState = vpnState,
         onEnergyRefresh = energyViewModel::refresh,
+        onConnectVpn = vpnViewModel::connectVanVpn,
         modifier = modifier,
     )
 }
@@ -80,7 +91,9 @@ fun DashboardScreen(modifier: Modifier = Modifier) {
 private fun DashboardContent(
     gpsState: GpsUiState,
     energyState: EnergyUiState,
+    vpnState: VpnUiState,
     onEnergyRefresh: () -> Unit,
+    onConnectVpn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -108,7 +121,13 @@ private fun DashboardContent(
                 ),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                item { DashboardHeader(state = gpsState) }
+                item {
+                    DashboardHeader(
+                        state = gpsState,
+                        vpnState = vpnState,
+                        onConnectVpn = onConnectVpn,
+                    )
+                }
                 item { CompactPositionCard(state = gpsState) }
                 item {
                     EnergySummaryCard(
@@ -134,12 +153,30 @@ private fun DashboardContent(
 }
 
 @Composable
-private fun DashboardHeader(state: GpsUiState) {
+private fun DashboardHeader(
+    state: GpsUiState,
+    vpnState: VpnUiState,
+    onConnectVpn: () -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        StatusPill(
-            text = connectionValue(state),
-            color = connectionColor(state),
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                VanStatusChip(
+                    status = vpnState.vanStatus,
+                    isChecking = vpnState.isCheckingConnectivity,
+                )
+                if (vpnState.vanStatus == VanConnectivityStatus.OFFLINE) {
+                    ConnectVpnChip(
+                        onClick = onConnectVpn,
+                        enabled = vpnState.openVpnInstalled && !vpnState.isLaunchingOpenVpn,
+                    )
+                }
+            }
+            StatusPill(
+                text = connectionValue(state),
+                color = connectionColor(state),
+            )
+        }
         Text(
             text = "RoadPanel",
             style = MaterialTheme.typography.headlineLarge,
@@ -300,7 +337,12 @@ private fun DashboardContentPreview() {
                 ),
                 lastUpdated = "2026-05-22T08:32:11.912940+00:00",
             ),
+            vpnState = VpnUiState(
+                openVpnInstalled = true,
+                vanStatus = VanConnectivityStatus.ONLINE,
+            ),
             onEnergyRefresh = {},
+            onConnectVpn = {},
         )
     }
 }

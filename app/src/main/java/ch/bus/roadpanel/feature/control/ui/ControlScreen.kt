@@ -36,6 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.bus.roadpanel.feature.control.data.BluetoothArduinoController
 import ch.bus.roadpanel.feature.control.data.ControlPermissions
+import ch.bus.roadpanel.feature.vpn.ui.VanVpnCard
+import ch.bus.roadpanel.feature.vpn.ui.VpnUiState
+import ch.bus.roadpanel.feature.vpn.ui.VpnViewModel
 import ch.bus.roadpanel.ui.components.RoadPanelCard
 import ch.bus.roadpanel.ui.components.RoadPanelIcon
 import ch.bus.roadpanel.ui.components.RoadPanelIconKind
@@ -56,7 +59,9 @@ fun ControlScreen(modifier: Modifier = Modifier) {
     val appContext = context.applicationContext
     val controller = remember(appContext) { BluetoothArduinoController(appContext) }
     val viewModel: ControlViewModel = viewModel(factory = ControlViewModel.factory(controller))
+    val vpnViewModel: VpnViewModel = viewModel(factory = VpnViewModel.factory(appContext))
     val state by viewModel.uiState.collectAsState()
+    val vpnState by vpnViewModel.uiState.collectAsState()
     val permissions = remember { ControlPermissions.runtimePermissions() }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -70,6 +75,7 @@ fun ControlScreen(modifier: Modifier = Modifier) {
 
     ControlContent(
         state = state,
+        vpnState = vpnState,
         onRequestPermission = {
             if (permissions.isNotEmpty()) {
                 permissionLauncher.launch(permissions)
@@ -80,6 +86,9 @@ fun ControlScreen(modifier: Modifier = Modifier) {
         onConnect = viewModel::connect,
         onDisconnect = viewModel::disconnect,
         onWifiToggle = viewModel::setWifiEnabled,
+        onVpnConnect = vpnViewModel::connectVanVpn,
+        onVpnDisconnect = vpnViewModel::disconnectVanVpn,
+        onOpenOpenVpn = vpnViewModel::openOpenVpnApp,
         modifier = modifier,
     )
 }
@@ -87,10 +96,14 @@ fun ControlScreen(modifier: Modifier = Modifier) {
 @Composable
 private fun ControlContent(
     state: ControlUiState,
+    vpnState: VpnUiState,
     onRequestPermission: () -> Unit,
     onConnect: () -> Unit,
     onDisconnect: () -> Unit,
     onWifiToggle: (Boolean) -> Unit,
+    onVpnConnect: () -> Unit,
+    onVpnDisconnect: () -> Unit,
+    onOpenOpenVpn: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -109,6 +122,14 @@ private fun ControlContent(
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             item { ControlHeader(state = state) }
+            item {
+                VanVpnCard(
+                    state = vpnState,
+                    onConnect = onVpnConnect,
+                    onDisconnect = onVpnDisconnect,
+                    onOpenOpenVpn = onOpenOpenVpn,
+                )
+            }
             item {
                 WifiControlCard(
                     state = state,
@@ -390,10 +411,14 @@ private fun ControlContentPreview() {
                 wifiEnabled = true,
                 lastResponse = "1",
             ),
+            vpnState = VpnUiState(openVpnInstalled = true),
             onRequestPermission = {},
             onConnect = {},
             onDisconnect = {},
             onWifiToggle = {},
+            onVpnConnect = {},
+            onVpnDisconnect = {},
+            onOpenOpenVpn = {},
         )
     }
 }
