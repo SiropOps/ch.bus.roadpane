@@ -119,18 +119,18 @@ private fun ControlContent(
         ) {
             item { ControlHeader(state = state) }
             item {
+                WifiControlCard(
+                    state = state,
+                    onRequestPermission = onRequestPermission,
+                    onWifiToggle = onWifiToggle,
+                )
+            }
+            item {
                 VanVpnCard(
                     state = vpnState,
                     onConnect = onVpnConnect,
                     onDisconnect = onVpnDisconnect,
                     onOpenOpenVpn = onOpenOpenVpn,
-                )
-            }
-            item {
-                WifiControlCard(
-                    state = state,
-                    onRequestPermission = onRequestPermission,
-                    onWifiToggle = onWifiToggle,
                 )
             }
         }
