@@ -85,7 +85,7 @@ private fun EnergyContent(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 22.dp,
-                top = 28.dp,
+                top = 16.dp,
                 end = 22.dp,
                 bottom = roadPanelBottomBarContentPadding(),
             ),
@@ -132,31 +132,34 @@ private fun EnergyHeader(
     state: EnergyUiState,
     onRefresh: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatusPill(
-                    text = energyStatusText(state),
-                    color = energyStatusColor(state),
-                )
-                Text(
-                    text = "Énergie",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.Bold,
-                )
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatusPill(
+                        text = energyStatusText(state),
+                        color = energyStatusColor(state),
+                    )
+                    Text(
+                        text = "Énergie",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                RefreshButton(onRefresh = onRefresh)
             }
-            RefreshButton(onRefresh = onRefresh)
+            Text(
+                text = state.lastUpdated ?: state.metrics?.timestamp
+                ?: "Les données MPPT s'actualisent toutes les 5 secondes",
+                style = MaterialTheme.typography.bodyMedium,
+                color = RoadPanelMuted,
+            )
         }
-        Text(
-            text = state.lastUpdated ?: state.metrics?.timestamp ?: "Les données MPPT s'actualisent toutes les 5 secondes",
-            style = MaterialTheme.typography.bodyMedium,
-            color = RoadPanelMuted,
-        )
-    }
 }
 
 @Composable
@@ -234,37 +237,39 @@ private fun EnergyMetricGrid(
 ) {
     val metrics = state.metrics ?: return
     DashboardSection(title = "Aperçu MPPT") {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                BatteryCard(
-                    modifier = Modifier.weight(1f),
-                    voltage = metrics.batteryVoltage,
-                    current = metrics.batteryChargingCurrent,
-                )
-                CompactMetricCard(
-                    modifier = Modifier.weight(1f),
-                    title = "Production du jour",
-                    label = "Récolté",
-                    value = metrics.yieldToday.format(0),
-                    unit = "Wh",
-                    icon = RoadPanelIconKind.Solar,
-                    accent = RoadPanelSolar,
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                CompactMetricCard(
-                    modifier = Modifier.weight(1f),
-                    title = "État de charge",
-                    label = "Contrôleur",
-                    value = metrics.chargeState.toChargeStateLabel(),
-                    icon = RoadPanelIconKind.Power,
-                    accent = RoadPanelAccent,
-                )
-                ManualRefreshCard(
-                    modifier = Modifier.weight(1f),
-                    onRefresh = onRefresh,
-                )
-            }
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            BatteryCard(
+                modifier = Modifier.fillMaxWidth(),
+                voltage = metrics.batteryVoltage,
+                current = metrics.batteryChargingCurrent,
+            )
+
+            CompactMetricCard(
+                modifier = Modifier.fillMaxWidth(),
+                title = "Production du jour",
+                label = "Récolté",
+                value = metrics.yieldToday.format(0),
+                unit = "Wh",
+                icon = RoadPanelIconKind.Solar,
+                accent = RoadPanelSolar,
+            )
+
+            CompactMetricCard(
+                modifier = Modifier.fillMaxWidth(),
+                title = "État de charge",
+                label = "Contrôleur",
+                value = metrics.chargeState.toChargeStateLabel(),
+                icon = RoadPanelIconKind.Power,
+                accent = RoadPanelAccent,
+            )
+
+            ManualRefreshCard(
+                modifier = Modifier.fillMaxWidth(),
+                onRefresh = onRefresh,
+            )
         }
     }
 }

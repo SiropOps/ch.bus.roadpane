@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -111,7 +112,8 @@ fun GpsScreen(modifier: Modifier = Modifier) {
         StatusPill(
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .padding(start = 18.dp, top = 24.dp),
+                .statusBarsPadding()
+                .padding(start = 18.dp, top = 10.dp),
             text = if (orthophotoEnabled) "Satellite" else "Carte",
             color = RoadPanelAccent,
         )
@@ -119,7 +121,8 @@ fun GpsScreen(modifier: Modifier = Modifier) {
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(top = 22.dp, end = 18.dp),
+                .statusBarsPadding()
+                .padding(top = 10.dp, end = 18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             MapControlButton(

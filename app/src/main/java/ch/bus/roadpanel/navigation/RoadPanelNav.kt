@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -83,11 +84,19 @@ fun RoadPanelApp() {
             startDestination = TopLevelDestination.Home.route,
             modifier = Modifier.fillMaxSize(),
         ) {
-            composable(TopLevelDestination.Home.route) { DashboardScreen() }
+            composable(TopLevelDestination.Home.route) {
+                StatusBarInsetScreen { DashboardScreen() }
+            }
             composable(TopLevelDestination.Gps.route) { GpsScreen() }
-            composable(TopLevelDestination.Power.route) { EnergyScreen() }
-            composable(TopLevelDestination.Sensors.route) { PlaceholderScreen("Baie de capteurs") }
-            composable(TopLevelDestination.Settings.route) { ControlScreen() }
+            composable(TopLevelDestination.Power.route) {
+                StatusBarInsetScreen { EnergyScreen() }
+            }
+            composable(TopLevelDestination.Sensors.route) {
+                StatusBarInsetScreen { PlaceholderScreen("Baie de capteurs") }
+            }
+            composable(TopLevelDestination.Settings.route) {
+                StatusBarInsetScreen { ControlScreen() }
+            }
         }
 
         RoadPanelBottomBar(
@@ -104,6 +113,17 @@ fun RoadPanelApp() {
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun StatusBarInsetScreen(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding(),
+    ) {
+        content()
     }
 }
 
@@ -202,7 +222,7 @@ private fun PlaceholderScreen(label: String) {
             .background(RoadPanelCanvas)
             .padding(
                 start = 22.dp,
-                top = 32.dp,
+                top = 16.dp,
                 end = 22.dp,
                 bottom = roadPanelBottomBarContentPadding(),
             ),

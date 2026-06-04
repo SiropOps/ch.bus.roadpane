@@ -10,9 +10,13 @@ class GpsRepository(private val api: GpsApi) {
             mapLatitude = dto.longitude,
             mapLongitude = dto.latitude,
             altitude = dto.altitude,
-            speed = dto.speed,
+            speed = dto.speed * METERS_PER_SECOND_TO_KILOMETERS_PER_HOUR,
             track = dto.track,
             time = dto.time,
         )
+    }
+
+    private companion object {
+        const val METERS_PER_SECOND_TO_KILOMETERS_PER_HOUR = 3.6
     }
 }

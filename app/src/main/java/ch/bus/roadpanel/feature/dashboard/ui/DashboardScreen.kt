@@ -115,7 +115,7 @@ private fun DashboardContent(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = 22.dp,
-                    top = 40.dp,
+                    top = 16.dp,
                     end = 22.dp,
                     bottom = roadPanelBottomBarContentPadding(),
                 ),
@@ -158,7 +158,7 @@ private fun DashboardHeader(
     vpnState: VpnUiState,
     onConnectVpn: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                 VanStatusChip(
@@ -245,24 +245,20 @@ private fun PositionMetric(
 
 @Composable
 private fun TelemetryGrid(items: List<DashboardMetric>) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        items.chunked(2).forEach { rowItems ->
-            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                rowItems.forEach { item ->
-                    TelemetryCard(
-                        modifier = Modifier.weight(1f),
-                        title = item.title,
-                        value = item.value,
-                        unit = item.unit,
-                        status = item.status,
-                        icon = item.icon,
-                        accent = item.accent,
-                    )
-                }
-                if (rowItems.size == 1) {
-                    Box(modifier = Modifier.weight(1f))
-                }
-            }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        items.forEach { item ->
+            TelemetryCard(
+                modifier = Modifier.fillMaxWidth(),
+                title = item.title,
+                value = item.value,
+                unit = item.unit,
+                status = item.status,
+                icon = item.icon,
+                accent = item.accent,
+            )
         }
     }
 }

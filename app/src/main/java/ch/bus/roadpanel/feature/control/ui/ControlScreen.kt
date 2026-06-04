@@ -111,7 +111,7 @@ private fun ControlContent(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 start = 22.dp,
-                top = 28.dp,
+                top = 16.dp,
                 end = 22.dp,
                 bottom = roadPanelBottomBarContentPadding(),
             ),
