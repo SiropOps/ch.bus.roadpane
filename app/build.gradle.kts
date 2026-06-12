@@ -1,4 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+fun String.asBuildConfigString(): String = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 plugins {
     id("com.android.application")
@@ -18,6 +21,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val vanCredentials = Properties().apply {
+            val credentialsFile = rootProject.file("van-credentials.properties")
+            if (credentialsFile.exists()) {
+                credentialsFile.inputStream().use(::load)
+            }
+        }
+        buildConfigField("String", "VAN_SSH_USER", vanCredentials.getProperty("van.ssh.user", "bus").asBuildConfigString())
+        buildConfigField("String", "VAN_SSH_PASSWORD", vanCredentials.getProperty("van.ssh.password", "").asBuildConfigString())
     }
 
     buildTypes {
@@ -36,6 +48,12 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
+        buildConfig = true
+    }
+    packaging {
+        resources {
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
     }
 }
 
@@ -65,6 +83,7 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.osmdroid.android)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.jsch)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

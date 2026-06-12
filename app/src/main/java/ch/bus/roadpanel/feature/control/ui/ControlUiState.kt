@@ -10,6 +10,10 @@ data class ControlUiState(
     val wifiCommandPhase: WifiCommandPhase = WifiCommandPhase.IDLE,
     val wifiAttempt: Int = 0,
     val wifiMaxAttempts: Int = 5,
+    val vanServerReachable: Boolean = false,
+    val vanShutdownPhase: VanShutdownPhase = VanShutdownPhase.CHECKING,
+    val vanShutdownPingAttempt: Int = 0,
+    val vanShutdownErrorMessage: String? = null,
     val lastResponse: String? = null,
     val errorMessage: String? = null,
 ) {
@@ -17,6 +21,11 @@ data class ControlUiState(
         get() = wifiCommandPhase == WifiCommandPhase.CONNECTING ||
             wifiCommandPhase == WifiCommandPhase.SENDING ||
             wifiCommandPhase == WifiCommandPhase.RETRYING
+
+    val isVanShutdownBusy: Boolean
+        get() = vanShutdownPhase == VanShutdownPhase.CHECKING ||
+            vanShutdownPhase == VanShutdownPhase.SENDING ||
+            vanShutdownPhase == VanShutdownPhase.WAITING_OFFLINE
 }
 
 enum class WifiCommandPhase {
@@ -25,5 +34,15 @@ enum class WifiCommandPhase {
     SENDING,
     RETRYING,
     SUCCESS,
+    ERROR,
+}
+
+enum class VanShutdownPhase {
+    CHECKING,
+    ONLINE,
+    OFFLINE,
+    SENDING,
+    WAITING_OFFLINE,
+    TIMEOUT,
     ERROR,
 }

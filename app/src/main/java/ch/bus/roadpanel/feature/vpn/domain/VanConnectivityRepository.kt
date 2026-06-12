@@ -1,5 +1,6 @@
 package ch.bus.roadpanel.feature.vpn.domain
 
+import ch.bus.roadpanel.core.network.NetworkModule
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -41,7 +42,7 @@ class VanConnectivityRepository(
         }.getOrDefault(false)
 
     private companion object {
-        const val GPS_ENDPOINT = "http://192.168.255.100:8011/api/gps"
-        const val VICTRON_HEALTH_ENDPOINT = "http://192.168.255.100:8013/api/health"
+        const val GPS_ENDPOINT = "http://${NetworkModule.VAN_HOST}:8011/api/gps"
+        const val VICTRON_HEALTH_ENDPOINT = "http://${NetworkModule.VAN_HOST}:8013/api/health"
     }
 }

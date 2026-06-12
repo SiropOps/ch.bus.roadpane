@@ -84,6 +84,7 @@ fun ControlScreen(modifier: Modifier = Modifier) {
             }
         },
         onWifiToggle = viewModel::setWifiEnabled,
+        onVanShutdown = viewModel::shutdownVanServer,
         onVpnConnect = vpnViewModel::connectVanVpn,
         onVpnDisconnect = vpnViewModel::disconnectVanVpn,
         onOpenOpenVpn = vpnViewModel::openOpenVpnApp,
@@ -97,6 +98,7 @@ private fun ControlContent(
     vpnState: VpnUiState,
     onRequestPermission: () -> Unit,
     onWifiToggle: (Boolean) -> Unit,
+    onVanShutdown: () -> Unit,
     onVpnConnect: () -> Unit,
     onVpnDisconnect: () -> Unit,
     onOpenOpenVpn: () -> Unit,
@@ -126,11 +128,98 @@ private fun ControlContent(
                 )
             }
             item {
+                VanServerShutdownCard(
+                    state = state,
+                    onShutdown = onVanShutdown,
+                )
+            }
+            item {
                 VanVpnCard(
                     state = vpnState,
                     onConnect = onVpnConnect,
                     onDisconnect = onVpnDisconnect,
                     onOpenOpenVpn = onOpenOpenVpn,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun VanServerShutdownCard(
+    state: ControlUiState,
+    onShutdown: () -> Unit,
+) {
+    val canShutdown = state.vanServerReachable && !state.isVanShutdownBusy
+    val accent = vanServerStatusColor(state)
+
+    RoadPanelCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Serveur VAN",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    Text(
+                        text = vanServerStatusText(state),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = accent,
+                    )
+                }
+                IconBubble(
+                    icon = RoadPanelIconKind.Power,
+                    accent = accent,
+                )
+            }
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        enabled = canShutdown,
+                        onClick = onShutdown,
+                    ),
+                shape = RoundedCornerShape(22.dp),
+                color = accent.copy(alpha = 0.12f),
+                contentColor = accent,
+                tonalElevation = 0.dp,
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 18.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = vanServerButtonText(state),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = accent,
+                    )
+                    Text(
+                        text = if (state.vanServerReachable) "ON" else "OFF",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = accent,
+                    )
+                }
+            }
+
+            state.vanShutdownErrorMessage?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = RoadPanelError,
                 )
             }
         }
@@ -348,6 +437,34 @@ private fun wifiStatusColor(state: ControlUiState): Color = when {
     else -> RoadPanelMuted
 }
 
+private fun vanServerStatusText(state: ControlUiState): String = when (state.vanShutdownPhase) {
+    VanShutdownPhase.CHECKING -> "Ping en cours..."
+    VanShutdownPhase.ONLINE -> "En ligne"
+    VanShutdownPhase.OFFLINE -> "Hors ligne"
+    VanShutdownPhase.SENDING -> "Commande shutdown now..."
+    VanShutdownPhase.WAITING_OFFLINE -> "Arret en cours, ping ${state.vanShutdownPingAttempt}"
+    VanShutdownPhase.TIMEOUT -> "Repond encore apres 30 s"
+    VanShutdownPhase.ERROR -> "Erreur SSH"
+}
+
+private fun vanServerButtonText(state: ControlUiState): String = when (state.vanShutdownPhase) {
+    VanShutdownPhase.CHECKING -> "Verification"
+    VanShutdownPhase.SENDING -> "Envoi"
+    VanShutdownPhase.WAITING_OFFLINE -> "Attente arret"
+    VanShutdownPhase.OFFLINE -> "Serveur eteint"
+    else -> "Eteindre"
+}
+
+private fun vanServerStatusColor(state: ControlUiState): Color = when (state.vanShutdownPhase) {
+    VanShutdownPhase.OFFLINE -> RoadPanelError
+    VanShutdownPhase.ERROR -> RoadPanelError
+    VanShutdownPhase.TIMEOUT -> RoadPanelWarning
+    VanShutdownPhase.CHECKING,
+    VanShutdownPhase.SENDING,
+    VanShutdownPhase.WAITING_OFFLINE -> RoadPanelSky
+    VanShutdownPhase.ONLINE -> RoadPanelAccent
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun ControlContentPreview() {
@@ -364,6 +481,7 @@ private fun ControlContentPreview() {
             vpnState = VpnUiState(openVpnInstalled = true),
             onRequestPermission = {},
             onWifiToggle = {},
+            onVanShutdown = {},
             onVpnConnect = {},
             onVpnDisconnect = {},
             onOpenOpenVpn = {},

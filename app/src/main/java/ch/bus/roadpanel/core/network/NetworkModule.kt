@@ -8,8 +8,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object NetworkModule {
-    private const val GPS_BASE_URL = "http://192.168.255.100:8011/"
-    private const val VICTRON_BASE_URL = "http://192.168.255.100:8013/"
+    const val VAN_HOST = "192.168.255.100"
+
+    private const val GPS_BASE_URL = "http://$VAN_HOST:8011/"
+    private const val VICTRON_BASE_URL = "http://$VAN_HOST:8013/"
 
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()

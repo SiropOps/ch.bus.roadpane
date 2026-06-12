@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.bus.roadpanel.feature.control.domain.ArduinoBluetoothController
 import ch.bus.roadpanel.feature.control.domain.ArduinoWifiCommandProgress
+import ch.bus.roadpanel.feature.control.domain.VanShutdownRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,12 +14,14 @@ import kotlinx.coroutines.launch
 
 class ControlViewModel(
     private val controller: ArduinoBluetoothController,
+    private val vanShutdownRepository: VanShutdownRepository = VanShutdownRepository(),
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ControlUiState())
     val uiState: StateFlow<ControlUiState> = _uiState.asStateFlow()
 
     init {
         refreshDeviceState()
+        refreshVanServerState()
     }
 
     fun refreshDeviceState() {
@@ -78,6 +81,68 @@ class ControlViewModel(
                     }
                 }
                 refreshDeviceState()
+            }
+        }
+    }
+
+    fun refreshVanServerState() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    vanShutdownPhase = VanShutdownPhase.CHECKING,
+                    vanShutdownErrorMessage = null,
+                )
+            }
+            val reachable = vanShutdownRepository.isVanReachable()
+            _uiState.update {
+                it.copy(
+                    vanServerReachable = reachable,
+                    vanShutdownPhase = if (reachable) VanShutdownPhase.ONLINE else VanShutdownPhase.OFFLINE,
+                    vanShutdownErrorMessage = null,
+                )
+            }
+        }
+    }
+
+    fun shutdownVanServer() {
+        val state = _uiState.value
+        if (state.isVanShutdownBusy || !state.vanServerReachable) return
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    vanShutdownPhase = VanShutdownPhase.SENDING,
+                    vanShutdownPingAttempt = 0,
+                    vanShutdownErrorMessage = null,
+                )
+            }
+
+            runCatching {
+                vanShutdownRepository.shutdownNow()
+                _uiState.update { it.copy(vanShutdownPhase = VanShutdownPhase.WAITING_OFFLINE) }
+                vanShutdownRepository.waitUntilOffline { attempt ->
+                    _uiState.update {
+                        it.copy(
+                            vanShutdownPhase = VanShutdownPhase.WAITING_OFFLINE,
+                            vanShutdownPingAttempt = attempt,
+                        )
+                    }
+                }
+            }.onSuccess { isOffline ->
+                _uiState.update {
+                    it.copy(
+                        vanServerReachable = !isOffline,
+                        vanShutdownPhase = if (isOffline) VanShutdownPhase.OFFLINE else VanShutdownPhase.TIMEOUT,
+                        vanShutdownErrorMessage = null,
+                    )
+                }
+            }.onFailure { exception ->
+                _uiState.update {
+                    it.copy(
+                        vanShutdownPhase = VanShutdownPhase.ERROR,
+                        vanShutdownErrorMessage = exception.message ?: "Impossible d'eteindre le serveur VAN",
+                    )
+                }
             }
         }
     }
