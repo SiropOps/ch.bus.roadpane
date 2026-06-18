@@ -47,6 +47,7 @@ import ch.bus.roadpanel.ui.theme.RoadPanelMuted
 import ch.bus.roadpanel.ui.theme.RoadPanelSky
 import ch.bus.roadpanel.ui.theme.RoadPanelSurface
 import ch.bus.roadpanel.ui.theme.RoadPanelTheme
+import ch.bus.roadpanel.utils.formatRelativeTime
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.tileprovider.tilesource.XYTileSource
@@ -207,7 +208,7 @@ private fun GpsTelemetrySheet(
                         style = MaterialTheme.typography.titleLarge,
                     )
                     Text(
-                        text = state.data?.time ?: "En attente du flux véhicule",
+                        text = state.data?.time?.let { formatRelativeTime(it) } ?: "En attente du flux véhicule",
                         style = MaterialTheme.typography.bodyMedium,
                         color = RoadPanelMuted,
                     )

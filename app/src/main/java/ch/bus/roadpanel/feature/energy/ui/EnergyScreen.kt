@@ -54,6 +54,7 @@ import ch.bus.roadpanel.ui.theme.RoadPanelSurface
 import ch.bus.roadpanel.ui.theme.RoadPanelSurfaceSoft
 import ch.bus.roadpanel.ui.theme.RoadPanelTheme
 import ch.bus.roadpanel.ui.theme.RoadPanelWarning
+import ch.bus.roadpanel.utils.formatRelativeTime
 import java.util.Locale
 
 @Composable
@@ -154,8 +155,8 @@ private fun EnergyHeader(
                 RefreshButton(onRefresh = onRefresh)
             }
             Text(
-                text = state.lastUpdated ?: state.metrics?.timestamp
-                ?: "Les données MPPT s'actualisent toutes les 5 secondes",
+                text = (state.lastUpdated ?: state.metrics?.timestamp)?.let { formatRelativeTime(it) }
+                    ?: "Les données MPPT s'actualisent toutes les 5 secondes",
                 style = MaterialTheme.typography.bodyMedium,
                 color = RoadPanelMuted,
             )
@@ -409,7 +410,8 @@ private fun ConnectionCard(state: EnergyUiState) {
                 ConnectionStatusChip(connected = state.health?.mqttConnected)
             }
             Text(
-                text = state.health?.lastMessageTimestamp ?: "Aucun message MPPT reçu pour l'instant",
+                text = state.health?.lastMessageTimestamp?.let { formatRelativeTime(it) }
+                    ?: "Aucun message MPPT reçu pour l'instant",
                 style = MaterialTheme.typography.bodyMedium,
                 color = RoadPanelMuted,
             )

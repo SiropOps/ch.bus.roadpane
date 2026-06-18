@@ -61,6 +61,7 @@ import ch.bus.roadpanel.ui.theme.RoadPanelMuted
 import ch.bus.roadpanel.ui.theme.RoadPanelSky
 import ch.bus.roadpanel.ui.theme.RoadPanelSurfaceSoft
 import ch.bus.roadpanel.ui.theme.RoadPanelTheme
+import ch.bus.roadpanel.utils.formatRelativeTime
 import java.util.Locale
 
 @Composable
@@ -207,7 +208,7 @@ private fun CompactPositionCard(state: GpsUiState) {
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = state.data?.time ?: "En attente du GPS",
+                        text = state.data?.time?.let { formatRelativeTime(it) } ?: "En attente du GPS",
                         style = MaterialTheme.typography.bodyMedium,
                         color = RoadPanelMuted,
                     )
@@ -280,7 +281,7 @@ private fun gpsStatusLabel(state: GpsUiState): String = when {
 }
 
 private fun gpsDetailLabel(state: GpsUiState): String = when {
-    state.data != null -> "Mis à jour à ${state.data.time}"
+    state.data != null -> "Mis à jour ${formatRelativeTime(state.data.time)}"
     state.isLoading -> "Interrogation du flux GPS véhicule"
     state.error != null -> state.error
     else -> "Prêt"
