@@ -31,6 +31,7 @@ enum class RoadPanelIconKind {
     SensorHead,
     SensorRoof,
     SensorOutside,
+    SensorHeater,
 }
 
 @Composable
@@ -189,6 +190,26 @@ fun RoadPanelIcon(
                         StrokeCap.Round,
                     )
                 }
+            }
+            RoadPanelIconKind.SensorHeater -> {
+                val flame = Path().apply {
+                    moveTo(cx, h * .12f)
+                    cubicTo(w * .57f, h * .30f, w * .76f, h * .38f, w * .76f, h * .61f)
+                    cubicTo(w * .76f, h * .79f, w * .64f, h * .88f, cx, h * .88f)
+                    cubicTo(w * .35f, h * .88f, w * .23f, h * .77f, w * .23f, h * .61f)
+                    cubicTo(w * .23f, h * .43f, w * .35f, h * .36f, w * .42f, h * .25f)
+                    cubicTo(w * .46f, h * .20f, w * .48f, h * .16f, cx, h * .12f)
+                }
+                drawPath(flame, color, style = stroke)
+                drawArc(
+                    color,
+                    185f,
+                    170f,
+                    false,
+                    Offset(w * .37f, h * .52f),
+                    Size(w * .26f, h * .25f),
+                    style = stroke,
+                )
             }
         }
     }

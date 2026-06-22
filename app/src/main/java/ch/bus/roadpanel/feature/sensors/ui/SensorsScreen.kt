@@ -60,6 +60,7 @@ private data class SensorSpec(
     val location: String,
     val icon: RoadPanelIconKind,
     val accent: Color,
+    val isWired: Boolean = false,
 )
 
 private val sensorSpecs = listOf(
@@ -67,6 +68,7 @@ private val sensorSpecs = listOf(
     SensorSpec("tete_used", "Tête used", "À hauteur de tête, près de la batterie", RoadPanelIconKind.SensorHead, RoadPanelAccent),
     SensorSpec("avalanche_toit", "Avalanche Toit", "Dans le toit relevable", RoadPanelIconKind.SensorRoof, RoadPanelWarning),
     SensorSpec("ca_pique", "Ça pique", "À l'extérieur", RoadPanelIconKind.SensorOutside, RoadPanelSolar),
+    SensorSpec("dht22", "DHT22", "Sous les sièges, près du chauffage", RoadPanelIconKind.SensorHeater, RoadPanelError, isWired = true),
 )
 
 @Composable
@@ -238,7 +240,7 @@ private fun SensorCard(spec: SensorSpec, sensor: SensorDto?, explicitlyMissing: 
                 ) {
                     val comfort = comfortFor(sensor.temperature, sensor.humidity)
                     StatusPill(text = comfort.label, color = comfort.color)
-                    BatteryIndicator(sensor = sensor)
+                    BatteryIndicator(sensor = sensor, isWired = spec.isWired)
                 }
             }
         }
@@ -266,11 +268,12 @@ private fun SensorMetric(label: String, value: String, unit: String?, modifier: 
 }
 
 @Composable
-private fun BatteryIndicator(sensor: SensorDto) {
-    val text = sensor.battery?.let { "$it %" }
+private fun BatteryIndicator(sensor: SensorDto, isWired: Boolean) {
+    val text = if (isWired) "Alimenté" else sensor.battery?.let { "$it %" }
         ?: sensor.batteryVoltage?.let { "${it.format(2)} V" }
         ?: "—"
     val color = when {
+        isWired -> RoadPanelAccent
         sensor.battery == null -> RoadPanelMuted
         sensor.battery <= 20 -> RoadPanelError
         sensor.battery <= 40 -> RoadPanelWarning
