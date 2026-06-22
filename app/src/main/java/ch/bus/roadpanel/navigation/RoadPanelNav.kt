@@ -40,6 +40,7 @@ import ch.bus.roadpanel.feature.control.ui.ControlScreen
 import ch.bus.roadpanel.feature.dashboard.ui.DashboardScreen
 import ch.bus.roadpanel.feature.energy.ui.EnergyScreen
 import ch.bus.roadpanel.feature.gps.ui.GpsScreen
+import ch.bus.roadpanel.feature.sensors.ui.SensorsScreen
 import ch.bus.roadpanel.ui.components.RoadPanelCard
 import ch.bus.roadpanel.ui.components.RoadPanelIcon
 import ch.bus.roadpanel.ui.components.RoadPanelIconKind
@@ -92,7 +93,7 @@ fun RoadPanelApp() {
                 StatusBarInsetScreen { EnergyScreen() }
             }
             composable(TopLevelDestination.Sensors.route) {
-                StatusBarInsetScreen { PlaceholderScreen("Baie de capteurs") }
+                StatusBarInsetScreen { SensorsScreen() }
             }
             composable(TopLevelDestination.Settings.route) {
                 StatusBarInsetScreen { ControlScreen() }

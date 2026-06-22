@@ -27,6 +27,10 @@ enum class RoadPanelIconKind {
     Altitude,
     Solar,
     Connection,
+    SensorCooler,
+    SensorHead,
+    SensorRoof,
+    SensorOutside,
 }
 
 @Composable
@@ -147,6 +151,44 @@ fun RoadPanelIcon(
                 drawArc(color, 205f, 130f, false, Offset(w * .20f, h * .20f), Size(w * .60f, h * .60f), style = stroke)
                 drawArc(color, 218f, 104f, false, Offset(w * .32f, h * .34f), Size(w * .36f, h * .36f), style = stroke)
                 drawCircle(color, s * .045f, Offset(cx, h * .72f))
+            }
+            RoadPanelIconKind.SensorCooler -> {
+                drawRoundRect(color, Offset(w * .16f, h * .28f), Size(w * .68f, h * .56f), CornerRadius(s * .09f), style = stroke)
+                drawLine(color, Offset(w * .16f, h * .45f), Offset(w * .84f, h * .45f), strokeWidth, StrokeCap.Round)
+                drawLine(color, Offset(w * .38f, h * .18f), Offset(w * .62f, h * .18f), strokeWidth, StrokeCap.Round)
+                drawLine(color, Offset(w * .38f, h * .18f), Offset(w * .34f, h * .28f), strokeWidth, StrokeCap.Round)
+                drawLine(color, Offset(w * .62f, h * .18f), Offset(w * .66f, h * .28f), strokeWidth, StrokeCap.Round)
+            }
+            RoadPanelIconKind.SensorHead -> {
+                drawCircle(color, s * .18f, Offset(cx, h * .31f), style = stroke)
+                drawArc(color, 200f, 140f, false, Offset(w * .22f, h * .45f), Size(w * .56f, h * .40f), style = stroke)
+            }
+            RoadPanelIconKind.SensorRoof -> {
+                val roof = Path().apply {
+                    moveTo(w * .12f, h * .67f)
+                    lineTo(w * .28f, h * .39f)
+                    lineTo(w * .72f, h * .39f)
+                    lineTo(w * .88f, h * .67f)
+                    close()
+                }
+                drawPath(roof, color, style = stroke)
+                drawLine(color, Offset(w * .20f, h * .76f), Offset(w * .80f, h * .76f), strokeWidth, StrokeCap.Round)
+                drawLine(color, Offset(w * .29f, h * .39f), Offset(w * .37f, h * .20f), strokeWidth, StrokeCap.Round)
+                drawLine(color, Offset(w * .71f, h * .39f), Offset(w * .63f, h * .20f), strokeWidth, StrokeCap.Round)
+                drawLine(color, Offset(w * .37f, h * .20f), Offset(w * .63f, h * .20f), strokeWidth, StrokeCap.Round)
+            }
+            RoadPanelIconKind.SensorOutside -> {
+                drawCircle(color, s * .17f, Offset(cx, cy), style = stroke)
+                for (angle in 0 until 360 step 45) {
+                    val radians = Math.toRadians(angle.toDouble())
+                    drawLine(
+                        color,
+                        Offset(cx + kotlin.math.cos(radians).toFloat() * s * .29f, cy + kotlin.math.sin(radians).toFloat() * s * .29f),
+                        Offset(cx + kotlin.math.cos(radians).toFloat() * s * .40f, cy + kotlin.math.sin(radians).toFloat() * s * .40f),
+                        strokeWidth,
+                        StrokeCap.Round,
+                    )
+                }
             }
         }
     }

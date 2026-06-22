@@ -2,6 +2,7 @@ package ch.bus.roadpanel.core.network
 
 import ch.bus.roadpanel.feature.gps.data.GpsApi
 import ch.bus.roadpanel.feature.energy.data.VictronApi
+import ch.bus.roadpanel.feature.sensors.data.SensorsApi
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -12,6 +13,7 @@ object NetworkModule {
 
     private const val GPS_BASE_URL = "http://$VAN_HOST:8011/"
     private const val VICTRON_BASE_URL = "http://$VAN_HOST:8013/"
+    private const val SENSORS_BASE_URL = "http://$VAN_HOST:8014/"
 
     private val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -27,6 +29,11 @@ object NetworkModule {
     val victronApi: VictronApi by lazy {
         retrofit(VICTRON_BASE_URL)
             .create(VictronApi::class.java)
+    }
+
+    val sensorsApi: SensorsApi by lazy {
+        retrofit(SENSORS_BASE_URL)
+            .create(SensorsApi::class.java)
     }
 
     private fun retrofit(baseUrl: String): Retrofit =
