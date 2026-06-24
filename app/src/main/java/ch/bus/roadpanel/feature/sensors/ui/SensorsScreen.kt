@@ -72,18 +72,27 @@ private val sensorSpecs = listOf(
 )
 
 @Composable
-fun SensorsScreen(modifier: Modifier = Modifier) {
+fun SensorsScreen(
+    onSensorClick: (String) -> Unit = {},
+    modifier: Modifier = Modifier,
+) {
     val sensorsViewModel: SensorsViewModel = viewModel(
         factory = SensorsViewModel.factory(SensorsRepository(NetworkModule.sensorsApi)),
     )
     val state by sensorsViewModel.uiState.collectAsState()
-    SensorsContent(state = state, onRefresh = sensorsViewModel::refresh, modifier = modifier)
+    SensorsContent(
+        state = state,
+        onRefresh = sensorsViewModel::refresh,
+        onSensorClick = onSensorClick,
+        modifier = modifier,
+    )
 }
 
 @Composable
 private fun SensorsContent(
     state: SensorsUiState,
     onRefresh: () -> Unit,
+    onSensorClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize().background(RoadPanelCanvas)) {
@@ -113,6 +122,7 @@ private fun SensorsContent(
                             spec = spec,
                             sensor = state.response.sensors[spec.id],
                             explicitlyMissing = spec.id in state.response.missingSensors,
+                            onNameClick = { onSensorClick(spec.id) },
                         )
                     }
                 }
@@ -181,7 +191,12 @@ private fun RefreshButton(onRefresh: () -> Unit) {
 }
 
 @Composable
-private fun SensorCard(spec: SensorSpec, sensor: SensorDto?, explicitlyMissing: Boolean) {
+private fun SensorCard(
+    spec: SensorSpec,
+    sensor: SensorDto?,
+    explicitlyMissing: Boolean,
+    onNameClick: () -> Unit,
+) {
     RoadPanelCard(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -200,8 +215,10 @@ private fun SensorCard(spec: SensorSpec, sensor: SensorDto?, explicitlyMissing: 
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = sensor?.name ?: spec.fallbackName,
+                        modifier = Modifier.clickable(onClick = onNameClick),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
+                        color = RoadPanelAccent,
                     )
                     Text(spec.location, style = MaterialTheme.typography.bodyMedium, color = RoadPanelMuted)
                 }
@@ -388,6 +405,7 @@ private fun SensorsContentPreview() {
                 ),
             ),
             onRefresh = {},
+            onSensorClick = {},
         )
     }
 }

@@ -33,3 +33,10 @@ data class SensorDto(
     @SerializedName("sensor_id") val sensorId: String?,
     @SerializedName("received_at") val receivedAt: String?,
 )
+
+data class SensorHistoryResponseDto(
+    @SerializedName("started_at") val startedAt: String? = null,
+    @SerializedName("reading_count") val readingCount: Int = 0,
+    @SerializedName("sensor_id") val sensorId: String? = null,
+    val readings: List<SensorDto> = emptyList(),
+)

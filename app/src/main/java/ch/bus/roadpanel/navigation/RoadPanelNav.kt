@@ -41,6 +41,7 @@ import ch.bus.roadpanel.feature.dashboard.ui.DashboardScreen
 import ch.bus.roadpanel.feature.energy.ui.EnergyScreen
 import ch.bus.roadpanel.feature.gps.ui.GpsScreen
 import ch.bus.roadpanel.feature.sensors.ui.SensorsScreen
+import ch.bus.roadpanel.feature.sensors.ui.SensorHistoryScreen
 import ch.bus.roadpanel.ui.components.RoadPanelCard
 import ch.bus.roadpanel.ui.components.RoadPanelIcon
 import ch.bus.roadpanel.ui.components.RoadPanelIconKind
@@ -74,6 +75,7 @@ fun RoadPanelApp() {
     )
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val isHistoryScreen = currentDestination?.route?.startsWith("sensor-history/") == true
 
     Box(
         modifier = Modifier
@@ -93,27 +95,39 @@ fun RoadPanelApp() {
                 StatusBarInsetScreen { EnergyScreen() }
             }
             composable(TopLevelDestination.Sensors.route) {
-                StatusBarInsetScreen { SensorsScreen() }
+                StatusBarInsetScreen {
+                    SensorsScreen(onSensorClick = { sensorId ->
+                        navController.navigate("sensor-history/$sensorId")
+                    })
+                }
+            }
+            composable("sensor-history/{sensorId}") { backStackEntry ->
+                SensorHistoryScreen(
+                    sensorId = backStackEntry.arguments?.getString("sensorId").orEmpty(),
+                    onBack = navController::popBackStack,
+                )
             }
             composable(TopLevelDestination.Settings.route) {
                 StatusBarInsetScreen { ControlScreen() }
             }
         }
 
-        RoadPanelBottomBar(
-            modifier = Modifier.align(Alignment.BottomCenter),
-            destinations = destinations,
-            currentRoute = currentDestination?.hierarchy?.firstOrNull()?.route,
-            onDestinationSelected = { destination ->
-                navController.navigate(destination.route) {
-                    popUpTo(navController.graph.findStartDestination().id) {
-                        saveState = true
+        if (!isHistoryScreen) {
+            RoadPanelBottomBar(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                destinations = destinations,
+                currentRoute = currentDestination?.hierarchy?.firstOrNull()?.route,
+                onDestinationSelected = { destination ->
+                    navController.navigate(destination.route) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
                     }
-                    launchSingleTop = true
-                    restoreState = true
-                }
-            },
-        )
+                },
+            )
+        }
     }
 }
 
