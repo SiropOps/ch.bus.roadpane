@@ -32,6 +32,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -40,6 +43,10 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -65,6 +72,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 private val historyDateFormatter = DateTimeFormatter.ofPattern("dd-MM\nHH-mm")
+private val historySelectionDateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy  HH:mm:ss")
 
 @Composable
 fun SensorHistoryScreen(
@@ -195,6 +203,13 @@ private data class HistoryPoint(
     val humidity: Double?,
 )
 
+private enum class HistorySeries { TEMPERATURE, HUMIDITY }
+
+private data class HistorySelection(
+    val pointIndex: Int,
+    val series: HistorySeries,
+)
+
 @Composable
 private fun SensorHistoryChart(readings: List<SensorDto>, modifier: Modifier = Modifier) {
     val points = readings.mapIndexedNotNull { index, reading ->
@@ -209,6 +224,7 @@ private fun SensorHistoryChart(readings: List<SensorDto>, modifier: Modifier = M
     val humidityRange = paddedRange(humidities, defaultMin = 0.0, defaultMax = 100.0)
     val temperatureColor = RoadPanelAccent
     val humidityColor = RoadPanelSky
+    var selection by remember(points) { mutableStateOf<HistorySelection?>(null) }
 
     Column(modifier = modifier) {
         Row(
@@ -219,7 +235,49 @@ private fun SensorHistoryChart(readings: List<SensorDto>, modifier: Modifier = M
             ChartLegend("Humidité  %", humidityColor)
         }
         Spacer(Modifier.height(4.dp))
-        Canvas(modifier = Modifier.fillMaxSize()) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(points, temperatureRange, humidityRange) {
+                    detectTapGestures { position ->
+                        selection = closestHistorySelection(
+                            touch = position,
+                            canvasWidth = size.width.toFloat(),
+                            canvasHeight = size.height.toFloat(),
+                            points = points,
+                            temperatureRange = temperatureRange,
+                            humidityRange = humidityRange,
+                            left = 62.dp.toPx(),
+                            rightPadding = 64.dp.toPx(),
+                            top = 12.dp.toPx(),
+                            bottomPadding = 44.dp.toPx(),
+                        )
+                    }
+                }
+                .pointerInput(points, temperatureRange, humidityRange) {
+                    fun select(position: Offset) {
+                        selection = closestHistorySelection(
+                            touch = position,
+                            canvasWidth = size.width.toFloat(),
+                            canvasHeight = size.height.toFloat(),
+                            points = points,
+                            temperatureRange = temperatureRange,
+                            humidityRange = humidityRange,
+                            left = 62.dp.toPx(),
+                            rightPadding = 64.dp.toPx(),
+                            top = 12.dp.toPx(),
+                            bottomPadding = 44.dp.toPx(),
+                        )
+                    }
+                    detectDragGestures(
+                        onDragStart = ::select,
+                        onDrag = { change, _ ->
+                            change.consume()
+                            select(change.position)
+                        },
+                    )
+                },
+        ) {
             val left = 62.dp.toPx()
             val right = size.width - 64.dp.toPx()
             val top = 12.dp.toPx()
@@ -276,6 +334,46 @@ private fun SensorHistoryChart(readings: List<SensorDto>, modifier: Modifier = M
 
             drawSeries(points, temperatureColor, { it.temperature }, { y(it, temperatureRange) }, ::x)
             drawSeries(points, humidityColor, { it.humidity }, { y(it, humidityRange) }, ::x)
+
+            selection?.let { selected ->
+                val point = points.getOrNull(selected.pointIndex) ?: return@let
+                val value = when (selected.series) {
+                    HistorySeries.TEMPERATURE -> point.temperature
+                    HistorySeries.HUMIDITY -> point.humidity
+                } ?: return@let
+                val color = when (selected.series) {
+                    HistorySeries.TEMPERATURE -> temperatureColor
+                    HistorySeries.HUMIDITY -> humidityColor
+                }
+                val selectedX = x(point.timeMillis)
+                val selectedY = when (selected.series) {
+                    HistorySeries.TEMPERATURE -> y(value, temperatureRange)
+                    HistorySeries.HUMIDITY -> y(value, humidityRange)
+                }
+
+                drawLine(
+                    color = color.copy(alpha = 0.38f),
+                    start = Offset(selectedX, top),
+                    end = Offset(selectedX, bottom),
+                    strokeWidth = 2.dp.toPx(),
+                )
+                drawCircle(Color.White, radius = 10.dp.toPx(), center = Offset(selectedX, selectedY))
+                drawCircle(color.copy(alpha = 0.25f), radius = 14.dp.toPx(), center = Offset(selectedX, selectedY))
+                drawCircle(color, radius = 6.dp.toPx(), center = Offset(selectedX, selectedY))
+                drawCircle(Color.White, radius = 2.dp.toPx(), center = Offset(selectedX, selectedY))
+
+                drawHistoryPopover(
+                    anchor = Offset(selectedX, selectedY),
+                    plotLeft = left,
+                    plotRight = right,
+                    plotTop = top,
+                    plotBottom = bottom,
+                    color = color,
+                    value = value,
+                    series = selected.series,
+                    timeMillis = point.timeMillis,
+                )
+            }
         }
     }
 }
@@ -312,6 +410,113 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSeries(
         }
     }
     if (hasPoint) drawPath(path, color, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
+}
+
+private fun closestHistorySelection(
+    touch: Offset,
+    canvasWidth: Float,
+    canvasHeight: Float,
+    points: List<HistoryPoint>,
+    temperatureRange: Pair<Double, Double>,
+    humidityRange: Pair<Double, Double>,
+    left: Float,
+    rightPadding: Float,
+    top: Float,
+    bottomPadding: Float,
+): HistorySelection? {
+    if (points.isEmpty()) return null
+    val right = canvasWidth - rightPadding
+    val bottom = canvasHeight - bottomPadding
+    if (right <= left || bottom <= top) return null
+    val firstTime = points.first().timeMillis
+    val timeSpan = max(1L, points.last().timeMillis - firstTime)
+
+    fun x(time: Long): Float = left + ((time - firstTime).toFloat() / timeSpan) * (right - left)
+    fun y(value: Double, range: Pair<Double, Double>): Float =
+        bottom - ((value - range.first) / (range.second - range.first)).toFloat() * (bottom - top)
+
+    var closest: HistorySelection? = null
+    var closestDistance = Float.MAX_VALUE
+    points.forEachIndexed { index, point ->
+        fun consider(series: HistorySeries, value: Double?, range: Pair<Double, Double>) {
+            if (value == null) return
+            val dx = touch.x - x(point.timeMillis)
+            val dy = touch.y - y(value, range)
+            val distance = dx * dx + dy * dy
+            if (distance < closestDistance) {
+                closestDistance = distance
+                closest = HistorySelection(index, series)
+            }
+        }
+        consider(HistorySeries.TEMPERATURE, point.temperature, temperatureRange)
+        consider(HistorySeries.HUMIDITY, point.humidity, humidityRange)
+    }
+    return closest
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawHistoryPopover(
+    anchor: Offset,
+    plotLeft: Float,
+    plotRight: Float,
+    plotTop: Float,
+    plotBottom: Float,
+    color: Color,
+    value: Double,
+    series: HistorySeries,
+    timeMillis: Long,
+) {
+    val popupWidth = min(206.dp.toPx(), plotRight - plotLeft)
+    val popupHeight = 64.dp.toPx()
+    val gap = 18.dp.toPx()
+    val popupLeft = (anchor.x - popupWidth / 2f).coerceIn(plotLeft, plotRight - popupWidth)
+    val preferredTop = anchor.y - gap - popupHeight
+    val popupTop = if (preferredTop >= plotTop) {
+        preferredTop
+    } else {
+        (anchor.y + gap).coerceAtMost(plotBottom - popupHeight)
+    }
+
+    drawRoundRect(
+        color = RoadPanelSurface.copy(alpha = 0.97f),
+        topLeft = Offset(popupLeft, popupTop),
+        size = androidx.compose.ui.geometry.Size(popupWidth, popupHeight),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx()),
+    )
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(popupLeft, popupTop),
+        size = androidx.compose.ui.geometry.Size(5.dp.toPx(), popupHeight),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx()),
+    )
+
+    val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = 15.dp.toPx()
+        this.color = color.toArgb()
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+    }
+    val datePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = 12.dp.toPx()
+        this.color = RoadPanelMuted.toArgb()
+    }
+    val valueText = when (series) {
+        HistorySeries.TEMPERATURE -> String.format(Locale.getDefault(), "Température  %.1f °C", value)
+        HistorySeries.HUMIDITY -> String.format(Locale.getDefault(), "Humidité  %.1f %%", value)
+    }
+    val dateText = Instant.ofEpochMilli(timeMillis)
+        .atZone(ZoneId.systemDefault())
+        .format(historySelectionDateFormatter)
+    drawContext.canvas.nativeCanvas.drawText(
+        valueText,
+        popupLeft + 16.dp.toPx(),
+        popupTop + 25.dp.toPx(),
+        titlePaint,
+    )
+    drawContext.canvas.nativeCanvas.drawText(
+        dateText,
+        popupLeft + 16.dp.toPx(),
+        popupTop + 48.dp.toPx(),
+        datePaint,
+    )
 }
 
 private fun paddedRange(values: List<Double>, defaultMin: Double, defaultMax: Double): Pair<Double, Double> {
