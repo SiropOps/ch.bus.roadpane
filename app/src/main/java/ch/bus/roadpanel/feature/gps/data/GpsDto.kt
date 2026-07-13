@@ -8,3 +8,9 @@ data class GpsDto(
     val track: Double,
     val time: String,
 )
+
+data class GpsStatusDto(
+    val gpsType: String,
+    val running: Boolean,
+    val lastSignalDate: Long?,
+)

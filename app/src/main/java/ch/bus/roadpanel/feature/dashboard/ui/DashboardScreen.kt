@@ -40,6 +40,7 @@ import ch.bus.roadpanel.feature.energy.ui.EnergyUiState
 import ch.bus.roadpanel.feature.energy.ui.EnergyViewModel
 import ch.bus.roadpanel.feature.gps.domain.GpsRepository
 import ch.bus.roadpanel.feature.gps.ui.GpsReading
+import ch.bus.roadpanel.feature.gps.ui.GpsSensorStatus
 import ch.bus.roadpanel.feature.gps.ui.GpsUiState
 import ch.bus.roadpanel.feature.gps.ui.GpsViewModel
 import ch.bus.roadpanel.feature.vpn.domain.VanConnectivityStatus
@@ -202,7 +203,10 @@ private fun CompactPositionCard(state: GpsUiState) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
                     Text(
                         text = "Position actuelle",
                         style = MaterialTheme.typography.titleMedium,
@@ -212,6 +216,7 @@ private fun CompactPositionCard(state: GpsUiState) {
                         style = MaterialTheme.typography.bodyMedium,
                         color = RoadPanelMuted,
                     )
+                    GpsSensorStatusRow(state = state)
                 }
                 StatusPill(
                     text = gpsStatusLabel(state),
@@ -220,6 +225,35 @@ private fun CompactPositionCard(state: GpsUiState) {
             }
         }
     }
+}
+
+@Composable
+private fun GpsSensorStatusRow(state: GpsUiState) {
+    if (state.sensorStatuses.isEmpty()) {
+        Text(
+            text = "Capteurs GPS : inconnus",
+            style = MaterialTheme.typography.bodyMedium,
+            color = RoadPanelMuted,
+        )
+        return
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        state.sensorStatuses.sortedBy { gpsSensorSortOrder(it.gpsType) }.forEach { sensor ->
+            StatusPill(
+                text = sensor.gpsType,
+                color = if (sensor.running) RoadPanelAccent else RoadPanelError,
+            )
+        }
+    }
+}
+
+private fun gpsSensorSortOrder(gpsType: String): Int = when (gpsType.uppercase(Locale.US)) {
+    "ESP32" -> 0
+    "USB" -> 1
+    else -> 2
 }
 
 @Composable
@@ -316,6 +350,18 @@ private fun DashboardContentPreview() {
                     speed = 48.2,
                     track = 144.0,
                     time = "20:42",
+                ),
+                sensorStatuses = listOf(
+                    GpsSensorStatus(
+                        gpsType = "ESP32",
+                        running = false,
+                        lastSignalDate = 1783964395990,
+                    ),
+                    GpsSensorStatus(
+                        gpsType = "USB",
+                        running = true,
+                        lastSignalDate = 1783964481360,
+                    ),
                 ),
             ),
             energyState = EnergyUiState(

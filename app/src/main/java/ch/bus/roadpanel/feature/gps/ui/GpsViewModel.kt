@@ -21,9 +21,16 @@ class GpsViewModel(private val repository: GpsRepository) : ViewModel() {
     fun refresh() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            runCatching { repository.fetchGps() }
-                .onSuccess { _uiState.value = GpsUiState(data = it) }
-                .onFailure { _uiState.value = _uiState.value.copy(isLoading = false, error = it.message ?: "Erreur inconnue") }
+            val gpsResult = runCatching { repository.fetchGps() }
+            val statusResult = runCatching { repository.fetchGpsStatus() }
+            val currentState = _uiState.value
+
+            _uiState.value = currentState.copy(
+                isLoading = false,
+                data = gpsResult.getOrElse { currentState.data },
+                sensorStatuses = statusResult.getOrElse { currentState.sensorStatuses },
+                error = gpsResult.exceptionOrNull()?.message,
+            )
         }
     }
 
