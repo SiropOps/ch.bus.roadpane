@@ -11,7 +11,7 @@ plugins {
 
 android {
     namespace = "ch.bus.roadpanel"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "ch.bus.roadpanel"
