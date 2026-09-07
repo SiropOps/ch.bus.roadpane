@@ -43,22 +43,16 @@ class EnergyViewModel(private val repository: VictronRepository) : ViewModel() {
             )
         }
 
-        val health = runCatching { repository.getHealth() }
-            .getOrElse { exception ->
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = exception.message ?: "Impossible de joindre le point d'état Victron",
-                    waitingForMqttData = false,
-                )
-                return
-            }
+        // /api/metrics is the source of truth. Health is useful metadata, but must
+        // not hide valid device readings when an older server does not expose it.
+        val health = runCatching { repository.getHealth() }.getOrNull()
 
         runCatching { repository.getMetrics() }
             .onSuccess { metrics ->
                 _uiState.value = EnergyUiState(
                     health = health,
                     metrics = metrics,
-                    lastUpdated = metrics.timestamp,
+                    lastUpdated = metrics.values.mapNotNull { it.timestamp }.maxOrNull(),
                 )
             }
             .onFailure { exception ->
@@ -66,7 +60,7 @@ class EnergyViewModel(private val repository: VictronRepository) : ViewModel() {
                     _uiState.value = EnergyUiState(
                         health = health,
                         waitingForMqttData = true,
-                        lastUpdated = health.lastMessageTimestamp,
+                        lastUpdated = health?.lastMessageTimestamp,
                     )
                 } else {
                     _uiState.value = _uiState.value.copy(

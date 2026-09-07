@@ -33,7 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.bus.roadpanel.core.network.NetworkModule
 import ch.bus.roadpanel.feature.energy.data.VictronHealthDto
-import ch.bus.roadpanel.feature.energy.data.VictronMetricsDto
+import ch.bus.roadpanel.feature.energy.data.VictronDeviceDto
 import ch.bus.roadpanel.feature.energy.domain.VictronRepository
 import ch.bus.roadpanel.feature.energy.ui.EnergySummaryCard
 import ch.bus.roadpanel.feature.energy.ui.EnergyUiState
@@ -370,13 +370,17 @@ private fun DashboardContentPreview() {
                     mqttConnected = true,
                     lastMessageTimestamp = "2026-05-22T08:32:11.912940+00:00",
                 ),
-                metrics = VictronMetricsDto(
-                    timestamp = "2026-05-22T08:32:11.912940+00:00",
-                    batteryChargingCurrent = 0.6,
-                    batteryVoltage = 12.6,
-                    chargeState = "bulk",
-                    solarPower = 8.0,
-                    yieldToday = 20.0,
+                metrics = mapOf(
+                    "smartsolar_pyleas" to VictronDeviceDto(
+                        timestamp = "2026-05-22T08:32:11.912940+00:00",
+                        name = "smartsolar_pyleas",
+                        modelName = "SmartSolar Charger MPPT 100/30",
+                        batteryChargingCurrent = 0.6,
+                        batteryVoltage = 12.6,
+                        chargeState = "bulk",
+                        solarPower = 8.0,
+                        yieldToday = 20.0,
+                    ),
                 ),
                 lastUpdated = "2026-05-22T08:32:11.912940+00:00",
             ),
